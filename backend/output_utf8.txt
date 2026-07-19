@@ -1,0 +1,166 @@
+﻿python : Traceback (most recent call last):
+At line:1 char:1
++ python check_tables.py > output.txt 2>&1; Get-Content output.txt -Raw
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last) 
+   ::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 3293, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 452, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 1269, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 716, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\impl.py", line 169, in _do_get
+    with util.safe_reraise():
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\impl.py", line 167, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 393, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 678, in __init__
+    self.__connect()
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 902, in __connect
+    with util.safe_reraise():
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 898, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\create.py", line 645, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\default.py", line 616, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\psy
+copg2\__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "localhost" (::1), port 
+5432 failed: FATAL:  database "nutrition_deficiency" does not exist
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\nutrients\backend\check_tables.py", line 4, in <module>
+    inspector = inspect(engine)
+                ^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\inspection.py", line 145, in inspect
+    ret = reg(subject)
+          ^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\reflection.py", line 303, in _engine_insp
+    return Inspector._construct(Inspector._init_engine, bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\reflection.py", line 236, in _construct
+    init(self, bind)
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\reflection.py", line 247, in _init_engine
+    engine.connect().close()
+    ^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 3269, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 147, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 2431, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\base.py", line 3293, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 452, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 1269, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 716, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\impl.py", line 169, in _do_get
+    with util.safe_reraise():
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\impl.py", line 167, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 393, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 678, in __init__
+    self.__connect()
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 902, in __connect
+    with util.safe_reraise():
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\pool\base.py", line 898, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\create.py", line 645, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\sql
+alchemy\engine\default.py", line 616, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Dhakshanesh\AppData\Roaming\Python\Python312\site-packages\psy
+copg2\__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to 
+server at "localhost" (::1), port 5432 failed: FATAL:  database 
+"nutrition_deficiency" does not exist
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)

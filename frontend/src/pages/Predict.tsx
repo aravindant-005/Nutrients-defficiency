@@ -39,7 +39,7 @@ function computeBMI(weight: number, height: number): number {
 
 const Predict: React.FC = () => {
   const [age, setAge]           = useState<number>(30);
-  const [gender, setGender]     = useState<number>(0);
+  const [gender, setGender]     = useState<'Male' | 'Female'>('Male');
   const [weight, setWeight]     = useState<number>(70);
   const [height, setHeight]     = useState<number>(170);
   const [includeShap, setIncludeShap] = useState(true);
@@ -73,8 +73,8 @@ const Predict: React.FC = () => {
 
     try {
       const { data } = await predictAPI.run({
-        age, gender,
-        race_ethnicity: 3,
+        age,
+        gender,
         weight_kg: weight,
         height_cm: height,
         bmi,
@@ -269,11 +269,11 @@ const Predict: React.FC = () => {
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Gender</label>
               <div className="grid grid-cols-2 gap-2">
-                {[{ label: 'Male', value: 0 }, { label: 'Female', value: 1 }].map((g) => (
-                  <button key={g.value} type="button"
-                    onClick={() => setGender(g.value)}
+                {[{ label: 'Male' }, { label: 'Female' }].map((g) => (
+                  <button key={g.label} type="button"
+                    onClick={() => setGender(g.label as 'Male' | 'Female')}
                     className={`py-2 rounded-lg text-xs font-semibold border transition-all duration-200 ${
-                      gender === g.value
+                      gender === g.label
                         ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}>

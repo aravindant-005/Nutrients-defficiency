@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v1',
+  baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -33,8 +33,7 @@ export interface NutrientRisk {
 
 export interface PredictInput {
   age: number;
-  gender: number;          // 0 = Male, 1 = Female
-  race_ethnicity: number;  // 1-7 (NHANES code, default 3)
+  gender: string;          // Male / Female / Other
   weight_kg: number;
   height_cm: number;
   bmi: number;
@@ -134,25 +133,25 @@ export interface UserProfile {
 
 export const authAPI = {
   me: () =>
-    api.get<UserProfile>('/auth/me'),
+    api.get<UserProfile>('auth/me'),
 };
 
 export const predictAPI = {
   run: (input: PredictInput) =>
-    api.post<PredictResponse>('/predict/', input),
+    api.post<PredictResponse>('predict/', input),
   history: () =>
-    api.get<PredictionHistoryItem[]>('/predict/history'),
+    api.get<PredictionHistoryItem[]>('predict/history'),
 };
 
 export const foodLogAPI = {
   create: (data: FoodLogCreate) =>
-    api.post<FoodLogItem>('/food-log/', data),
+    api.post<FoodLogItem>('food-log/', data),
   list: (dateStr?: string) =>
-    api.get<FoodLogItem[]>('/food-log/', { params: dateStr ? { date_str: dateStr } : {} }),
+    api.get<FoodLogItem[]>('food-log/', { params: dateStr ? { date_str: dateStr } : {} }),
   delete: (id: number) =>
-    api.delete(`/food-log/${id}`),
+    api.delete(`food-log/${id}`),
   summary: (dateStr?: string) =>
-    api.get<DailySummary>('/food-log/summary', { params: dateStr ? { date_str: dateStr } : {} }),
+    api.get<DailySummary>('food-log/summary', { params: dateStr ? { date_str: dateStr } : {} }),
 };
 
 export interface FoodCatalogItem {
@@ -173,15 +172,25 @@ export interface FoodCatalogItem {
 
 export const foodCatalogAPI = {
   search: (q: string) =>
-    api.get<FoodCatalogItem[]>('/food-catalog/search', { params: { q } }),
+    api.get<FoodCatalogItem[]>('food-catalog/search', { params: { q } }),
 };
 
 export function parseApiError(err: any): string {
   if (!err) return 'An unexpected error occurred.';
 
+  if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+    return 'Network error: cannot reach the API at http://localhost:8000. Ensure the backend is running and CORS is enabled.';
+  }
+
+  if (err.request && !err.response) {
+    return 'No response from the server. Please verify the backend is running and the API URL is correct.';
+  }
+
   const detail = err.response?.data?.detail;
   if (!detail) {
-    return err.message || 'An unexpected error occurred.';
+    return err.response?.status
+      ? `Request failed with status ${err.response.status}: ${err.message}`
+      : err.message || 'An unexpected error occurred.';
   }
 
   if (typeof detail === 'string') {

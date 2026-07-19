@@ -103,6 +103,11 @@ print(f"\n  USDA food_database rows: {len(usda_db)}")
 # 5. Open Food Facts — extract nutrient columns only
 # ──────────────────────────────────────────────────────────────────────────────
 print("\n=== Processing Open Food Facts ===")
+SKIP_OFF = os.environ.get('SKIP_OFF', '0') == '1'
+if SKIP_OFF:
+    print('SKIP_OFF=1 -> skipping Open Food Facts processing to reduce memory usage')
+    off_db = pd.DataFrame(columns=list(OFF_COLS.values()))
+else:
 OFF_COLS = {
     "code":               "barcode",
     "product_name":       "food_name",
@@ -141,6 +146,15 @@ del off_chunks; gc.collect()
 off_db["source"] = "OpenFoodFacts"
 off_db["fdc_id"] = None
 print(f"  Open Food Facts rows after filtering: {len(off_db)}")
+
+# Coerce nutrient columns to numeric where possible to avoid insertion errors
+nutrient_cols_off = [
+    "calories_kcal", "protein_g", "carbohydrates", "carbs_g", "fat_g",
+    "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"
+]
+for c in nutrient_cols_off:
+    if c in off_db.columns:
+        off_db[c] = pd.to_numeric(off_db[c], errors='coerce')
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 6. Concatenate USDA + OFF into unified food_database.csv
@@ -200,6 +214,17 @@ if DB_LOAD:
                         zinc_mg FLOAT
                     );
                 """))
+
+                # Ensure a clean table before bulk insert to avoid duplicates
+                try:
+                    conn.execute(text("TRUNCATE TABLE food_catalog RESTART IDENTITY;"))
+                    print("  Truncated existing food_catalog table.")
+                except Exception:
+                    # If truncation fails (e.g., permissions), continue and rely on append
+                    pass
+
+        # Drop any rows without a food_name to avoid NOT NULL violations
+        food_db = food_db.dropna(subset=["food_name"]).reset_index(drop=True)
 
         # Insert in chunks to avoid memory issues
         chunk_size = 10_000

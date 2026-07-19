@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUser = async () => {
       if (token) {
         try {
-          const response = await api.get<User>('/auth/me');
+          const response = await api.get<User>('auth/me');
           setUser(response.data);
         } catch (error) {
           console.error('Error fetching user info', error);
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     params.append('username', email);
     params.append('password', password);
 
-    const response = await api.post<{ access_token: string }>('/auth/login', params, {
+    const response = await api.post<{ access_token: string }>('auth/login', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string, fullName: string) => {
-    await api.post('/auth/register', {
+    await api.post('auth/register', {
       email,
       password,
       name: fullName,
