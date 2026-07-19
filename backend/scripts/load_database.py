@@ -103,6 +103,7 @@ print(f"\n  USDA food_database rows: {len(usda_db)}")
 # 5. Open Food Facts — extract nutrient columns only
 # ──────────────────────────────────────────────────────────────────────────────
 print("\n=== Processing Open Food Facts ===")
+<<<<<<< HEAD
 OFF_COLS = {
     "code":               "barcode",
     "product_name":       "food_name",
@@ -118,29 +119,65 @@ OFF_COLS = {
     "zinc_100g":          "zinc_mg",
 }
 off_path = os.path.join(OFF_DIR, "en.openfoodfacts.org.products.csv.gz")
+=======
+SKIP_OFF = os.environ.get('SKIP_OFF', '0') == '1'
+if SKIP_OFF:
+    print('SKIP_OFF=1 -> skipping Open Food Facts processing to reduce memory usage')
+    # Create an empty DataFrame with expected columns (will be aligned later)
+    off_db = pd.DataFrame()
+else:
+    OFF_COLS = {
+        "code":               "barcode",
+        "product_name":       "food_name",
+        "brands":             "brand",
+        "energy-kcal_100g":   "calories_kcal",
+        "proteins_100g":      "protein_g",
+        "carbohydrates_100g": "carbs_g",
+        "fat_100g":           "fat_g",
+        "iron_100g":          "iron_mg",
+        "calcium_100g":       "calcium_mg",
+        "vitamin-d_100g":     "vitamin_d_mcg",
+        "vitamin-b12_100g":   "vitamin_b12_mcg",
+        "zinc_100g":          "zinc_mg",
+    }
+    off_path = os.path.join(OFF_DIR, "en.openfoodfacts.org.products.csv.gz")
+>>>>>>> 8850ae5 (Your commit message)
 
-off_chunks = []
-for chunk in pd.read_csv(
-    off_path, sep="\t", compression="gzip",
-    usecols=[c for c in OFF_COLS if c != "brand"],
-    dtype={"code": str},
-    chunksize=200_000,
-    low_memory=False,
-    on_bad_lines="skip"
-):
-    chunk = chunk.rename(columns=OFF_COLS)
-    # Drop rows with no product name or all nutrients missing
-    nutrient_cols = ["calories_kcal", "protein_g", "carbs_g", "fat_g",
-                     "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"]
-    present = [c for c in nutrient_cols if c in chunk.columns]
-    chunk = chunk.dropna(subset=["food_name"] + present, how="all")
-    off_chunks.append(chunk)
+    off_chunks = []
+    for chunk in pd.read_csv(
+        off_path, sep="\t", compression="gzip",
+        usecols=[c for c in OFF_COLS if c != "brand"],
+        dtype={"code": str},
+        chunksize=200_000,
+        low_memory=False,
+        on_bad_lines="skip"
+    ):
+        chunk = chunk.rename(columns=OFF_COLS)
+        # Drop rows with no product name or all nutrients missing
+        nutrient_cols = ["calories_kcal", "protein_g", "carbs_g", "fat_g",
+                         "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"]
+        present = [c for c in nutrient_cols if c in chunk.columns]
+        chunk = chunk.dropna(subset=["food_name"] + present, how="all")
+        off_chunks.append(chunk)
 
-off_db = pd.concat(off_chunks, ignore_index=True)
-del off_chunks; gc.collect()
-off_db["source"] = "OpenFoodFacts"
-off_db["fdc_id"] = None
-print(f"  Open Food Facts rows after filtering: {len(off_db)}")
+    if off_chunks:
+        off_db = pd.concat(off_chunks, ignore_index=True)
+        del off_chunks; gc.collect()
+    else:
+        off_db = pd.DataFrame()
+    if not off_db.empty:
+        off_db["source"] = "OpenFoodFacts"
+        off_db["fdc_id"] = None
+        print(f"  Open Food Facts rows after filtering: {len(off_db)}")
+
+        # Coerce nutrient columns to numeric where possible to avoid insertion errors
+        nutrient_cols_off = [
+            "calories_kcal", "protein_g", "carbohydrates", "carbs_g", "fat_g",
+            "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"
+        ]
+        for c in nutrient_cols_off:
+            if c in off_db.columns:
+                off_db[c] = pd.to_numeric(off_db[c], errors='coerce')
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 6. Concatenate USDA + OFF into unified food_database.csv
