@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
@@ -10,6 +11,18 @@ import app.models.deficiency  # noqa: F401
 # Create all PostgreSQL tables on startup (idempotent — skips existing tables)
 try:
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                ALTER TABLE prediction_histories
+                ADD COLUMN IF NOT EXISTS magnesium_risk FLOAT NOT NULL DEFAULT 0.0;
+                ALTER TABLE prediction_histories
+                ADD COLUMN IF NOT EXISTS vitamin_c_risk FLOAT NOT NULL DEFAULT 0.0;
+                """
+            )
+        )
+
     print("✓ PostgreSQL tables verified/created.")
 except Exception as e:
     print(f"⚠ Database schema init warning: {e}")

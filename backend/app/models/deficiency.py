@@ -105,6 +105,16 @@ class FoodLog(Base):
 class PredictionHistory(Base):
     __tablename__ = "prediction_histories"
 
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    iron_risk = Column(Float, nullable=False)
+    vitamin_d_risk = Column(Float, nullable=False)
+    vitamin_b12_risk = Column(Float, nullable=False)
+    calcium_risk = Column(Float, nullable=False)
+    zinc_risk = Column(Float, nullable=False)
+    magnesium_risk = Column(Float, nullable=False, default=0.0)
+    vitamin_c_risk = Column(Float, nullable=False, default=0.0)
+    prediction_date = Column(DateTime(timezone=True), server_default=func.now())
     id               = Column(Integer, primary_key=True, index=True)
     user_id          = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 

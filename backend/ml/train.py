@@ -38,6 +38,9 @@ import textwrap
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, StratifiedKFold, RandomizedSearchCV
 
 warnings.filterwarnings("ignore")
 
@@ -54,6 +57,32 @@ from sklearn.metrics import (
     f1_score, roc_auc_score, classification_report
 )
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.calibration import CalibratedClassifierCV
+from scipy.stats import randint, uniform
+
+
+def get_transform_output_feature_names(preprocessor: ColumnTransformer) -> list:
+    """Return the output feature names for a fitted ColumnTransformer."""
+    output_names = []
+    for name, transformer, cols in preprocessor.transformers_:
+        if name == "remainder" or transformer == "drop" or transformer is None:
+            continue
+        if isinstance(cols, str):
+            cols = [cols]
+        if hasattr(transformer, "get_feature_names_out"):
+            try:
+                feature_names = transformer.get_feature_names_out(cols)
+            except Exception:
+                try:
+                    feature_names = transformer.get_feature_names_out()
+                except Exception:
+                    feature_names = cols
+        else:
+            feature_names = [f"{name}__{c}" for c in cols]
+        output_names.extend(list(feature_names))
+    return output_names
 
 import xgboost as xgb
 from typing import Dict
@@ -71,6 +100,12 @@ PROC_DIR   = os.path.join(BASE_DIR, "data", "processed")
 MODELS_DIR = os.path.join(BASE_DIR, "ml", "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
+# ── Config ────────────────────────────────────────────────────────────────────
+# Expanded features: demographics + basic nutrient totals (improves predictive power)
+FEATURE_COLS = ["age", "gender", "race_ethnicity", "weight_kg", "height_cm", "bmi"]
+NUTRIENT_COLS = [
+    "calories_kcal", "protein_g", "carbs_g", "fat_g",
+    "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"
 # ── Feature / Target config ────────────────────────────────────────────────────
 FEATURE_COLS = [
     "age", "gender", "bmi", "weight_kg", "height_cm",
@@ -107,6 +142,58 @@ def evaluate(y_true, y_pred, y_prob):
     }
 
 
+def train_xgboost(X_train, y_train, X_test, scale_pos_weight: float) -> tuple:
+    """Train XGBoost and return (model, y_pred, y_prob). Uses randomized search CV."""
+    # Use RandomizedSearchCV to tune XGBoost hyperparameters
+    base = xgb.XGBClassifier(eval_metric="logloss", random_state=RANDOM_STATE, n_jobs=-1)
+    param_dist = {
+        "n_estimators": [100, 300, 500],
+        "max_depth": [3, 6, 8],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "subsample": [0.6, 0.8, 1.0],
+        "colsample_bytree": [0.6, 0.8, 1.0],
+        "scale_pos_weight": [scale_pos_weight]
+    }
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    rs = RandomizedSearchCV(base, param_distributions=param_dist, n_iter=12, scoring="roc_auc", cv=cv, n_jobs=-1, random_state=RANDOM_STATE, verbose=0)
+    rs.fit(X_train, y_train)
+    best = rs.best_estimator_
+    y_prob = best.predict_proba(X_test)[:, 1]
+    y_pred = best.predict(X_test)
+    return best, y_pred, y_prob
+
+
+def train_random_forest(X_train, y_train, X_test, scale_pos_weight: float) -> tuple:
+    """Train Random Forest and return (model, y_pred, y_prob). Uses randomized search CV and calibration."""
+    # Use RandomizedSearchCV to tune RandomForest hyperparameters
+    # Convert scale_pos_weight to class_weight dict
+    class_weight = {0: 1.0, 1: max(1.0, scale_pos_weight)}
+    base = RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=-1)
+    param_dist = {
+        "n_estimators": randint(100, 600),
+        "max_depth": [None, 6, 12, 20],
+        "min_samples_leaf": [1, 3, 5],
+        "class_weight": [None, "balanced", class_weight]
+    }
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    rs = RandomizedSearchCV(base, param_distributions=param_dist, n_iter=12, scoring="roc_auc", cv=cv, n_jobs=-1, random_state=RANDOM_STATE, verbose=0)
+    rs.fit(X_train, y_train)
+    best = rs.best_estimator_
+    # Calibrate probabilities for better probability estimates
+    try:
+        calib = CalibratedClassifierCV(best, cv=3)
+        calib.fit(X_train, y_train)
+        y_prob = calib.predict_proba(X_test)[:, 1]
+        y_pred = calib.predict(X_test)
+        return calib, y_pred, y_prob
+    except Exception:
+        y_prob = best.predict_proba(X_test)[:, 1]
+        y_pred = best.predict(X_test)
+        return best, y_pred, y_prob
+
+
+def save_model(nutrient: str, model, model_type: str) -> str:
+    """Save model to disk. Returns the saved path."""
 def save_model(nutrient, model, model_type):
     """Persist a trained model to disk."""
     if model_type == "xgboost":
@@ -251,6 +338,11 @@ def build_models(scale_pos_weight: float):
         ),
     }
 
+print(f"\nLoading nhanes_master.csv ...")
+master = pd.read_csv(os.path.join(PROC_DIR, "nhanes_master.csv"))
+# Compose features: demographics + nutrient totals if present
+feature_cols = [c for c in FEATURE_COLS + NUTRIENT_COLS if c in master.columns]
+label_cols   = [c for c in master.columns if c.startswith("label_")]
 
 # ── Main Training ──────────────────────────────────────────────────────────────
 print("=" * 65)
@@ -293,11 +385,17 @@ master = add_nutrient_features(master)
 feature_cols = [c for c in FEATURE_COLS if c in master.columns]
 print(f"  Features ({len(feature_cols)}): {feature_cols}")
 
+# Save base feature names
 # Save final feature names
 with open(os.path.join(MODELS_DIR, "feature_names.json"), "w") as f:
     json.dump(feature_cols, f, indent=2)
 print(f"  Saved feature_names.json")
 
+# Save model-specific feature lists for each nutrient
+feature_names_by_nutrient = {}
+
+all_metrics      = {}   # {nutrient: {xgboost: {...}, random_forest: {...}, winner: "..."}}
+comparison_rows  = []   # for CSV export
 all_metrics     = {}
 comparison_rows = []
 
@@ -305,7 +403,48 @@ for nutrient, label_col in TARGETS.items():
     if label_col not in master.columns:
         print(f"\n⚠  {label_col} not found — skipping {nutrient}")
         continue
+    # Avoid leakage: remove the nutrient column that corresponds to the target
+    nutrient_col_map = {
+        "iron": "iron_mg",
+        "calcium": "calcium_mg",
+        "vitamin_d": "vitamin_d_mcg",
+        "vitamin_b12": "vitamin_b12_mcg",
+        "zinc": "zinc_mg",
+    }
+    exclude_col = nutrient_col_map.get(nutrient)
+    local_features = [c for c in feature_cols if c != exclude_col]
 
+    df = master[local_features + [label_col]].dropna()
+    X_df = df[local_features].copy()
+    y = df[label_col].astype(int).values
+
+    # Keep the actual feature list for this nutrient so inference matches training
+    feature_names_by_nutrient[nutrient] = local_features
+
+    # Preprocessing: numeric scaler, categorical encoding
+    numeric_cols = [c for c in local_features if c not in ("race_ethnicity", "gender")]
+    cat_cols = [c for c in local_features if c in ("race_ethnicity", "gender")]
+
+    # Note: scikit-learn <1.2 uses `sparse` arg, newer versions use `sparse_output`.
+    try:
+        ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    except TypeError:
+        ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
+
+    preproc = ColumnTransformer([
+        ("num", StandardScaler(), numeric_cols),
+        ("cat", ohe, cat_cols)
+    ], remainder="drop")
+
+    X_proc = preproc.fit_transform(X_df)
+    X = X_proc
+
+    transformed_feature_names = get_transform_output_feature_names(preproc)
+    feature_names_by_nutrient[nutrient] = transformed_feature_names
+    preproc_path = os.path.join(MODELS_DIR, f"{nutrient}_preprocessor.pkl")
+    with open(preproc_path, "wb") as f:
+        pickle.dump(preproc, f)
+    print(f"  Saved preprocessor -> {os.path.basename(preproc_path)}")
     df = master[feature_cols + [label_col]].dropna()
     if len(df) < 100:
         print(f"\n⚠  Too few samples for {nutrient} ({len(df)}) — skipping")
@@ -405,6 +544,13 @@ for nutrient, label_col in TARGETS.items():
             "winner":      "YES" if mk == best_name else "",
         })
 
+# ── Save model-specific feature names ───────────────────────────────────────
+feature_map_path = os.path.join(MODELS_DIR, "feature_names_by_nutrient.json")
+with open(feature_map_path, "w") as f:
+    json.dump(feature_names_by_nutrient, f, indent=2)
+print(f"Model-specific feature names saved -> {feature_map_path}")
+
+# ── Save metrics JSON ──────────────────────────────────────────────────────────
 # ── Save metrics ───────────────────────────────────────────────────────────────
 metrics_path = os.path.join(MODELS_DIR, "metrics.json")
 with open(metrics_path, "w") as f:

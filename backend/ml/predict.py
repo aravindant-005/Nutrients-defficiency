@@ -28,6 +28,7 @@ import pickle
 from typing import Dict, Optional
 
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
@@ -36,6 +37,12 @@ DEFICIENCY_TARGETS = [
     "iron", "calcium", "vitamin_d", "vitamin_b12",
     "zinc", "magnesium", "vitamin_c"
 ]
+
+# ── Lazy caches ────────────────────────────────────────────────────────────────
+_model_cache:        Dict[str, object]  = {}
+_model_type_cache:   Dict[str, str]     = {}
+_feature_names:      Optional[list]     = None
+_feature_names_by_nutrient: Optional[dict] = None
 
 # Feature columns must match the order used during training
 FEATURE_COLS = [
@@ -65,6 +72,51 @@ def get_feature_names() -> list:
     return _feature_names
 
 
+def get_raw_feature_names_for_nutrient(nutrient: str) -> list:
+    """Return the raw feature names used for a specific nutrient model."""
+    full_features = get_feature_names()
+    exclude_map = {
+        "iron": "iron_mg",
+        "calcium": "calcium_mg",
+        "vitamin_d": "vitamin_d_mcg",
+        "vitamin_b12": "vitamin_b12_mcg",
+        "zinc": "zinc_mg",
+    }
+    exclude_col = exclude_map.get(nutrient)
+    return [f for f in full_features if f != exclude_col]
+
+
+def get_feature_names_for_nutrient(nutrient: str) -> list:
+    """Load transformed feature names that were used to train a specific nutrient model."""
+    global _feature_names_by_nutrient
+    if _feature_names_by_nutrient is None:
+        path = os.path.join(MODELS_DIR, "feature_names_by_nutrient.json")
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"feature_names_by_nutrient.json not found at {path}. "
+                "Run `python ml/train.py` first."
+            )
+        with open(path) as f:
+            _feature_names_by_nutrient = json.load(f)
+
+    if nutrient not in _feature_names_by_nutrient:
+        raise FileNotFoundError(
+            f"Transformed feature names not found for {nutrient}. "
+            "Run `python ml/train.py` first."
+        )
+    return _feature_names_by_nutrient[nutrient]
+
+
+def load_preprocessor(nutrient: str):
+    """Load the preprocessor used for a specific nutrient model."""
+    path = os.path.join(MODELS_DIR, f"{nutrient}_preprocessor.pkl")
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Preprocessor not found for {nutrient} at {path}. "
+            "Run `python ml/train.py` first."
+        )
+    with open(path, "rb") as f:
+        return pickle.load(f)
 def get_available_model_types(nutrient: str) -> list[str]:
     """Return available model types for the given nutrient based on saved files."""
     types = []
@@ -159,6 +211,14 @@ def predict_deficiencies(
         dict mapping nutrient name -> risk probability (0.0 – 1.0)
         Value is None if that model is not yet trained.
     """
+    feature_map = {
+        "age":            age,
+        "gender":         gender,
+        "race_ethnicity": race_ethnicity,
+        "weight_kg":      weight_kg,
+        "height_cm":      height_cm,
+        "bmi":            bmi,
+
     feature_names = get_feature_names()
 
     feature_map: Dict[str, float] = {
@@ -172,11 +232,17 @@ def predict_deficiencies(
     if nutrient_totals:
         feature_map.update(nutrient_totals)
 
-    X = np.array([[feature_map.get(f, 0.0) for f in feature_names]], dtype=float)
-
     results: Dict[str, Optional[float]] = {}
     for nutrient in DEFICIENCY_TARGETS:
         try:
+            model = load_model(nutrient)
+            raw_feature_names = get_raw_feature_names_for_nutrient(nutrient)
+            X_raw = pd.DataFrame([{f: feature_map.get(f, 0.0) for f in raw_feature_names}])
+            preprocessor = load_preprocessor(nutrient)
+            X = preprocessor.transform(X_raw)
+            prob = float(model.predict_proba(X)[0][1])
+            results[nutrient] = round(prob, 4)
+
             models = load_models(nutrient)
             probabilities = []
             for model in models.values():

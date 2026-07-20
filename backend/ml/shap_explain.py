@@ -20,8 +20,16 @@ import json
 from typing import Dict, List, Optional
 
 import numpy as np
+import pandas as pd
 import shap
 
+from ml.predict import (
+    load_model,
+    load_preprocessor,
+    get_feature_names_for_nutrient,
+    get_raw_feature_names_for_nutrient,
+    get_model_type,
+)
 from ml.predict import load_models, get_feature_names, get_model_type
 
 # Lazy explainer cache
@@ -80,6 +88,10 @@ def explain_prediction(
         or None if the model is not yet trained.
     """
     try:
+        feature_names = get_feature_names_for_nutrient(nutrient)
+        raw_feature_names = get_raw_feature_names_for_nutrient(nutrient)
+        preprocessor = load_preprocessor(nutrient)
+        model_type    = get_model_type(nutrient)
         feature_names = get_feature_names()
         explainer     = _get_explainer(nutrient)
     except (FileNotFoundError, Exception):
@@ -94,6 +106,8 @@ def explain_prediction(
     }
     if nutrient_totals:
         feature_map.update(nutrient_totals)
+    X_raw = pd.DataFrame([{f: feature_map.get(f, 0.0) for f in raw_feature_names}])
+    X = preprocessor.transform(X_raw)
 
     X = np.array([[feature_map.get(f, 0.0) for f in feature_names]], dtype=float)
 
