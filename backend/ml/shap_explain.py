@@ -23,9 +23,16 @@ import json
 from typing import Dict, List, Optional
 
 import numpy as np
+import pandas as pd
 import shap
 
-from ml.predict import load_model, get_feature_names, get_model_type
+from ml.predict import (
+    load_model,
+    load_preprocessor,
+    get_feature_names_for_nutrient,
+    get_raw_feature_names_for_nutrient,
+    get_model_type,
+)
 
 # ── Lazy explainer cache ───────────────────────────────────────────────────────
 _explainer_cache: Dict[str, shap.TreeExplainer] = {}
@@ -88,7 +95,9 @@ def explain_prediction(
         Returns None if the model for this nutrient is not yet trained.
     """
     try:
-        feature_names = get_feature_names()
+        feature_names = get_feature_names_for_nutrient(nutrient)
+        raw_feature_names = get_raw_feature_names_for_nutrient(nutrient)
+        preprocessor = load_preprocessor(nutrient)
         model_type    = get_model_type(nutrient)
         explainer     = _get_explainer(nutrient)
     except FileNotFoundError:
@@ -104,7 +113,8 @@ def explain_prediction(
     }
     if nutrient_totals:
         feature_map.update(nutrient_totals)
-    X = np.array([[feature_map.get(f, 0.0) for f in feature_names]], dtype=float)
+    X_raw = pd.DataFrame([{f: feature_map.get(f, 0.0) for f in raw_feature_names}])
+    X = preprocessor.transform(X_raw)
 
     # Compute raw SHAP values
     shap_values = explainer.shap_values(X)

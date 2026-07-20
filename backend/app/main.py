@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
@@ -8,6 +9,17 @@ from app.api.v1.api import api_router
 # Note: For production architectures, migration systems like Alembic are preferred.
 try:
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                ALTER TABLE prediction_histories
+                ADD COLUMN IF NOT EXISTS magnesium_risk FLOAT NOT NULL DEFAULT 0.0;
+                ALTER TABLE prediction_histories
+                ADD COLUMN IF NOT EXISTS vitamin_c_risk FLOAT NOT NULL DEFAULT 0.0;
+                """
+            )
+        )
 except Exception as e:
     print(f"Skipping database schema initialization: {e}")
 

@@ -65,6 +65,8 @@ class PredictionHistory(Base):
     vitamin_b12_risk = Column(Float, nullable=False)
     calcium_risk = Column(Float, nullable=False)
     zinc_risk = Column(Float, nullable=False)
+    magnesium_risk = Column(Float, nullable=False, default=0.0)
+    vitamin_c_risk = Column(Float, nullable=False, default=0.0)
     prediction_date = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

@@ -135,9 +135,22 @@ class PredictionService:
         # 1. Resolve patient profile
         profile = cls.get_user_profile(current_user, data)
 
-        # 2. Get daily nutrient totals (using current UTC date)
-        today = datetime.utcnow().date()
-        nutrient_totals = cls.calculate_daily_nutrient_totals(db, current_user.id, today)
+        # 2. Get daily nutrient totals: allow payload override or date override
+        if data and getattr(data, "nutrient_totals", None):
+            nutrient_totals = data.nutrient_totals
+        else:
+            if data and getattr(data, "date_str", None):
+                try:
+                    target_date = datetime.strptime(data.date_str, "%Y-%m-%d").date()
+                except Exception:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="date_str must be in YYYY-MM-DD format"
+                    )
+            else:
+                target_date = datetime.utcnow().date()
+
+            nutrient_totals = cls.calculate_daily_nutrient_totals(db, current_user.id, target_date)
 
         # 3. Call prediction model
         try:
@@ -203,6 +216,8 @@ class PredictionService:
             vitamin_d_risk=results["vitamin_d"].risk_score,
             vitamin_b12_risk=results["vitamin_b12"].risk_score,
             zinc_risk=results["zinc"].risk_score,
+            magnesium_risk=0.0,
+            vitamin_c_risk=0.0,
             prediction_date=now,
         )
         db.add(history)
