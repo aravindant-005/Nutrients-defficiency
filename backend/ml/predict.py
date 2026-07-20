@@ -1,19 +1,26 @@
 """
-predict.py
-----------
-Loads the best-performing model for each deficiency target and runs
-inference. Automatically detects whether the saved model is XGBoost
-or Random Forest by reading {nutrient}_model_type.txt.
+ml/predict.py
+-------------
+Loads the best-performing model for each deficiency target and runs inference.
+Auto-detects whether the saved model is XGBoost or sklearn via {nutrient}_model_type.txt.
+
+7 Deficiency Targets:
+  iron, calcium, vitamin_d, vitamin_b12, zinc, magnesium, vitamin_c
+
+14 Feature Dimensions:
+  age, gender, bmi, weight_kg, height_cm,
+  calories_kcal, protein_g, carbs_g, fat_g, fiber_g,
+  iron_mg, calcium_mg, vitamin_d_mcg, vitamin_b12_mcg,
+  zinc_mg, magnesium_mg, vitamin_c_mg, vitamin_b6_mg, vitamin_a_mcg
 
 Usage:
     from ml.predict import predict_deficiencies
 
     result = predict_deficiencies(
-        age=35, gender=1, race_ethnicity=3,
-        weight_kg=68.0, height_cm=165.0, bmi=24.9
+        age=28, gender=1, weight_kg=55.0, height_cm=160.0, bmi=21.5,
+        nutrient_totals={"iron_mg": 6.0, "calcium_mg": 400.0, ...}
     )
-    # -> {"iron": 0.72, "calcium": 0.35, "vitamin_d": 0.91,
-    #     "vitamin_b12": 0.21, "zinc": 0.58}
+    # -> {"iron": 0.72, "calcium": 0.35, "vitamin_d": 0.91, ...}
 """
 import os
 import json
@@ -23,13 +30,13 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.ensemble import RandomForestClassifier
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODELS_DIR = os.path.join(BASE_DIR, "ml", "models")
+MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 
-DEFICIENCY_TARGETS = ["iron", "calcium", "vitamin_d", "vitamin_b12", "zinc"]
+DEFICIENCY_TARGETS = [
+    "iron", "calcium", "vitamin_d", "vitamin_b12",
+    "zinc", "magnesium", "vitamin_c"
+]
 
 # ── Lazy caches ────────────────────────────────────────────────────────────────
 _model_cache:        Dict[str, object]  = {}
@@ -37,20 +44,31 @@ _model_type_cache:   Dict[str, str]     = {}
 _feature_names:      Optional[list]     = None
 _feature_names_by_nutrient: Optional[dict] = None
 
-# ── Loaders ────────────────────────────────────────────────────────────────────
+# Feature columns must match the order used during training
+FEATURE_COLS = [
+    "age", "gender", "bmi", "weight_kg", "height_cm",
+    "calories_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g",
+    "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg",
+    "zinc_mg", "magnesium_mg", "vitamin_c_mg", "vitamin_b6_mg", "vitamin_a_mcg",
+]
+
+# Lazy caches
+_model_cache:       Dict[str, object] = {}
+_model_type_cache:  Dict[str, str]    = {}
+_feature_names:     Optional[list]    = None
+
 
 def get_feature_names() -> list:
-    """Load and cache the ordered feature name list."""
+    """Load and cache the ordered feature name list saved during training."""
     global _feature_names
     if _feature_names is None:
         path = os.path.join(MODELS_DIR, "feature_names.json")
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                f"feature_names.json not found at {path}. "
-                "Run `python ml/train.py` first."
-            )
-        with open(path) as f:
-            _feature_names = json.load(f)
+        if os.path.exists(path):
+            with open(path) as f:
+                _feature_names = json.load(f)
+        else:
+            # fall back to compile-time defaults
+            _feature_names = FEATURE_COLS
     return _feature_names
 
 
@@ -99,60 +117,87 @@ def load_preprocessor(nutrient: str):
         )
     with open(path, "rb") as f:
         return pickle.load(f)
+def get_available_model_types(nutrient: str) -> list[str]:
+    """Return available model types for the given nutrient based on saved files."""
+    types = []
+    if os.path.exists(os.path.join(MODELS_DIR, f"{nutrient}_model.json")):
+        types.append("xgboost")
+    if os.path.exists(os.path.join(MODELS_DIR, f"{nutrient}_model.pkl")):
+        types.append("random_forest")
+    return types
 
 
 def get_model_type(nutrient: str) -> str:
-    """Return 'xgboost' or 'random_forest' for the given nutrient."""
+    """Return the saved model type string for the given nutrient."""
     if nutrient not in _model_type_cache:
         type_path = os.path.join(MODELS_DIR, f"{nutrient}_model_type.txt")
-        if not os.path.exists(type_path):
-            # Legacy fallback: assume xgboost if only .json exists
-            if os.path.exists(os.path.join(MODELS_DIR, f"{nutrient}_model.json")):
-                _model_type_cache[nutrient] = "xgboost"
-            else:
-                raise FileNotFoundError(
-                    f"Model type file not found for '{nutrient}'. "
-                    "Run `python ml/train.py` first."
-                )
-        else:
+        if os.path.exists(type_path):
             with open(type_path) as f:
                 _model_type_cache[nutrient] = f.read().strip()
+        else:
+            available = get_available_model_types(nutrient)
+            if len(available) == 2:
+                _model_type_cache[nutrient] = "ensemble"
+            elif len(available) == 1:
+                _model_type_cache[nutrient] = available[0]
+            else:
+                raise FileNotFoundError(
+                    f"No model found for '{nutrient}'. Run `python ml/train.py` first."
+                )
     return _model_type_cache[nutrient]
 
 
-def load_model(nutrient: str) -> object:
-    """Load and cache the best model for the given nutrient."""
+def load_xgboost_model(nutrient: str) -> xgb.XGBClassifier:
+    path = os.path.join(MODELS_DIR, f"{nutrient}_model.json")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"XGBoost model file not found: {path}")
+    model = xgb.XGBClassifier()
+    model.load_model(path)
+    return model
+
+
+def load_sklearn_model(nutrient: str) -> object:
+    path = os.path.join(MODELS_DIR, f"{nutrient}_model.pkl")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Sklearn model file not found: {path}")
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+
+def load_models(nutrient: str) -> Dict[str, object]:
+    """Load all available models for a nutrient and cache them."""
     if nutrient not in _model_cache:
-        model_type = get_model_type(nutrient)
-
-        if model_type == "xgboost":
-            path = os.path.join(MODELS_DIR, f"{nutrient}_model.json")
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"XGBoost model not found: {path}")
-            model = xgb.XGBClassifier()
-            model.load_model(path)
-
-        elif model_type == "random_forest":
-            path = os.path.join(MODELS_DIR, f"{nutrient}_model.pkl")
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"RandomForest model not found: {path}")
-            with open(path, "rb") as f:
-                model = pickle.load(f)
-
-        else:
-            raise ValueError(f"Unknown model type '{model_type}' for nutrient '{nutrient}'.")
-
-        _model_cache[nutrient] = model
-
+        models = {}
+        if os.path.exists(os.path.join(MODELS_DIR, f"{nutrient}_model.json")):
+            models["xgboost"] = load_xgboost_model(nutrient)
+        if os.path.exists(os.path.join(MODELS_DIR, f"{nutrient}_model.pkl")):
+            models["random_forest"] = load_sklearn_model(nutrient)
+        if not models:
+            raise FileNotFoundError(
+                f"No model found for '{nutrient}'. Run `python ml/train.py` first."
+            )
+        _model_cache[nutrient] = models
     return _model_cache[nutrient]
 
 
-# ── Inference ──────────────────────────────────────────────────────────────────
+def load_model(nutrient: str, model_type: Optional[str] = None) -> object:
+    """Load and cache a single model for the given nutrient."""
+    if model_type is None:
+        model_type = get_model_type(nutrient)
+
+    if model_type == "xgboost":
+        return load_xgboost_model(nutrient)
+    if model_type == "random_forest":
+        return load_sklearn_model(nutrient)
+    if model_type == "ensemble":
+        raise ValueError("Use load_models() to access ensemble models directly.")
+
+    raise ValueError(f"Unsupported model type: {model_type}")
+
 
 def predict_deficiencies(
     age: float,
     gender: int,
-    race_ethnicity: int,
     weight_kg: float,
     height_cm: float,
     bmi: float,
@@ -160,21 +205,11 @@ def predict_deficiencies(
     nutrient_totals: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Optional[float]]:
     """
-    Run deficiency risk predictions for all 5 nutrients.
-
-    Parameters:
-        age            : Age in years (18–80)
-        gender         : 0 = Male, 1 = Female
-        race_ethnicity : NHANES race/ethnicity code (1–7)
-        weight_kg      : Body weight in kilograms
-        height_cm      : Height in centimetres
-        bmi            : Body Mass Index (kg/m²)
-        activity_level : Optional physical activity description
-        nutrient_totals: Optional dictionary of daily nutrient intakes
+    Run deficiency risk predictions for all 7 targets.
 
     Returns:
-        dict mapping nutrient name -> risk probability (0.0–1.0)
-        Value is None if the model is not yet trained.
+        dict mapping nutrient name -> risk probability (0.0 – 1.0)
+        Value is None if that model is not yet trained.
     """
     feature_map = {
         "age":            age,
@@ -183,7 +218,17 @@ def predict_deficiencies(
         "weight_kg":      weight_kg,
         "height_cm":      height_cm,
         "bmi":            bmi,
+
+    feature_names = get_feature_names()
+
+    feature_map: Dict[str, float] = {
+        "age":        age,
+        "gender":     float(gender),
+        "bmi":        bmi,
+        "weight_kg":  weight_kg,
+        "height_cm":  height_cm,
     }
+
     if nutrient_totals:
         feature_map.update(nutrient_totals)
 
@@ -197,6 +242,15 @@ def predict_deficiencies(
             X = preprocessor.transform(X_raw)
             prob = float(model.predict_proba(X)[0][1])
             results[nutrient] = round(prob, 4)
+
+            models = load_models(nutrient)
+            probabilities = []
+            for model in models.values():
+                probabilities.append(float(model.predict_proba(X)[0][1]))
+            if not probabilities:
+                raise FileNotFoundError()
+            prob = round(float(sum(probabilities) / len(probabilities)), 4)
+            results[nutrient] = prob
         except FileNotFoundError:
             results[nutrient] = None
 
@@ -204,28 +258,32 @@ def predict_deficiencies(
 
 
 def get_loaded_model_types() -> Dict[str, str]:
-    """Return a dict of {nutrient: model_type} for all trained targets."""
+    """Return {nutrient: model_type} for all trained targets."""
     info = {}
-    for nutrient in DEFICIENCY_TARGETS:
+    for n in DEFICIENCY_TARGETS:
         try:
-            info[nutrient] = get_model_type(nutrient)
+            info[n] = get_model_type(n)
         except FileNotFoundError:
-            info[nutrient] = "not_trained"
+            info[n] = "not_trained"
     return info
 
 
-# ── CLI test ───────────────────────────────────────────────────────────────────
+# ── CLI smoke test ────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("Model type selection:")
+    print("Model types:")
     for n, t in get_loaded_model_types().items():
         print(f"  {n:<14} -> {t}")
 
-    print("\nSample prediction (Female, 32, BMI 22.9):")
+    print("\nSample prediction (Female, 28, BMI 21.5):")
     sample = predict_deficiencies(
-        age=32, gender=1, race_ethnicity=3,
-        weight_kg=60.0, height_cm=162.0, bmi=22.9
+        age=28, gender=1, weight_kg=55.0, height_cm=160.0, bmi=21.5,
+        nutrient_totals={
+            "iron_mg": 6.0, "calcium_mg": 400.0,
+            "vitamin_d_mcg": 2.0, "vitamin_b12_mcg": 1.1,
+            "zinc_mg": 4.0, "magnesium_mg": 150.0, "vitamin_c_mg": 30.0,
+        }
     )
     for k, v in sample.items():
-        status = "!! HIGH RISK" if v and v > 0.70 else ("~ Moderate" if v and v > 0.45 else "OK")
-        val_str = f"{v:.4f}" if v is not None else "N/A (not trained)"
-        print(f"  {k:<14} : {val_str}  {status}")
+        tag = "!! HIGH" if v and v > 0.70 else ("~ MOD" if v and v > 0.45 else "OK")
+        val_str = f"{v:.4f}" if v is not None else "N/A"
+        print(f"  {k:<14}: {val_str}  {tag}")

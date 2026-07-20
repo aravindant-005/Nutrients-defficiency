@@ -5,8 +5,10 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
 
-# Autocreate database tables if they do not exist
-# Note: For production architectures, migration systems like Alembic are preferred.
+# Import all models so SQLAlchemy can discover and create the tables
+import app.models.deficiency  # noqa: F401
+
+# Create all PostgreSQL tables on startup (idempotent — skips existing tables)
 try:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
@@ -20,27 +22,46 @@ try:
                 """
             )
         )
+
+    print("✓ PostgreSQL tables verified/created.")
 except Exception as e:
-    print(f"Skipping database schema initialization: {e}")
+    print(f"⚠ Database schema init warning: {e}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    version="2.0.0",
+    description=(
+        "AI-powered Micronutrient Deficiency Detection System. "
+        "Predicts Iron, Calcium, Vitamin D, Vitamin B12, Zinc, Magnesium, and Vitamin C deficiency risks "
+        "using XGBoost / Random Forest ML models with SHAP explanations."
+    ),
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Apply CORS middleware config
+# CORS
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_origins=[str(o) for o in settings.BACKEND_CORS_ORIGINS],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    print(f"✓ CORS enabled for: {settings.BACKEND_CORS_ORIGINS}")
+
 
 @app.get("/health", tags=["health"])
 def health_check():
-    return {"status": "ok"}
+    """Health check endpoint — returns ok when the server is running."""
+    return {
+        "status": "ok",
+        "service": settings.PROJECT_NAME,
+        "version": "2.0.0",
+        "database": "PostgreSQL",
+    }
 
-# Bind version 1 master router routes
+
+# Mount versioned API
 app.include_router(api_router, prefix=settings.API_V1_STR)

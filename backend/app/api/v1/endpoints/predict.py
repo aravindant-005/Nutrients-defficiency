@@ -19,11 +19,13 @@ def predict_deficiency(
     """
     Run deficiency risk predictions for the authenticated user.
 
-    Can accept demographic + physiological attributes in the request body, or
-    falls back to the authenticated user's database profile fields.
-
-    Calculates today's food log totals, resolves user profile, runs Random Forest / XGBoost models,
-    generates SHAP local feature explanations, and stores history in the database.
+    Pipeline:
+      1. Resolve user demographics (from request body or stored profile)
+      2. Aggregate today's food log nutrient totals (14 features)
+      3. Run ML model (XGBoost / Random Forest / best model per target)
+      4. Generate SHAP explanations for each of the 7 deficiency targets
+      5. Persist prediction history to PostgreSQL
+      6. Generate personalized food recommendations + weekly meal plan
     """
     return PredictionService.execute_prediction(db, current_user, data)
 
@@ -33,13 +35,10 @@ def get_prediction_history(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Retrieve the authenticated user's past deficiency prediction records.
-    """
-    records = (
+    """Retrieve the authenticated user's past deficiency prediction records (most recent first)."""
+    return (
         db.query(PredictionHistory)
         .filter(PredictionHistory.user_id == current_user.id)
         .order_by(PredictionHistory.prediction_date.desc())
         .all()
     )
-    return records

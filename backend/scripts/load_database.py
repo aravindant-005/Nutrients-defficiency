@@ -215,6 +215,21 @@ else:
         off_db = pd.DataFrame(selected)
     else:
         off_db = pd.DataFrame()
+    for chunk in pd.read_csv(
+        off_path, sep="\t", compression="gzip",
+        usecols=[c for c in OFF_COLS if c != "brand"],
+        dtype={"code": str},
+        chunksize=200_000,
+        low_memory=False,
+        on_bad_lines="skip"
+    ):
+        chunk = chunk.rename(columns=OFF_COLS)
+        # Drop rows with no product name or all nutrients missing
+        nutrient_cols = ["calories_kcal", "protein_g", "carbs_g", "fat_g",
+                         "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"]
+        present = [c for c in nutrient_cols if c in chunk.columns]
+        chunk = chunk.dropna(subset=["food_name"] + present, how="all")
+        off_chunks.append(chunk)
 
     if off_chunks:
         off_db = pd.concat(off_chunks, ignore_index=True)
@@ -398,6 +413,17 @@ if DB_LOAD:
                         zinc_mg FLOAT
                     );
                 """))
+
+                # Ensure a clean table before bulk insert to avoid duplicates
+                try:
+                    conn.execute(text("TRUNCATE TABLE food_catalog RESTART IDENTITY;"))
+                    print("  Truncated existing food_catalog table.")
+                except Exception:
+                    # If truncation fails (e.g., permissions), continue and rely on append
+                    pass
+
+        # Drop any rows without a food_name to avoid NOT NULL violations
+        food_db = food_db.dropna(subset=["food_name"]).reset_index(drop=True)
 
         # Insert in chunks to avoid memory issues
         chunk_size = 10_000

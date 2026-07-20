@@ -4,6 +4,7 @@ from pydantic import BeforeValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Annotated
 
+
 def parse_cors(v: Union[str, List[str]]) -> List[str]:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]
@@ -13,23 +14,30 @@ def parse_cors(v: Union[str, List[str]]) -> List[str]:
         return v
     raise ValueError(v)
 
+
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Nutrition Deficiency Predictor API"
-    
+
     # JWT Security settings
     JWT_SECRET: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     # Database configuration
     DATABASE_URL: str
-    
+
     # CORS setup
     BACKEND_CORS_ORIGINS: Annotated[
         List[str],
         BeforeValidator(parse_cors)
-    ] = []
+    ] = [
+        "http://localhost:5173",
+        "http://localhost",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1",
+    ]
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -37,5 +45,6 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore"
     )
+
 
 settings = Settings()

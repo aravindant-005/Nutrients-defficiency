@@ -1,3 +1,14 @@
+"""
+predict_service.py
+------------------
+Orchestrates the full ML prediction pipeline:
+  1. Resolve user demographics from DB profile or request payload
+  2. Aggregate today's food log nutrient totals (14 feature dimensions)
+  3. Call ML model (best of XGBoost / Random Forest per target)
+  4. Generate SHAP explanations for each of the 7 deficiency targets
+  5. Persist prediction history to PostgreSQL
+  6. Generate personalized recommendations
+"""
 from datetime import datetime, timezone, date, time
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
@@ -10,115 +21,116 @@ from app.ml.model import run_prediction
 from app.ml.explainer import run_explanation
 from app.services.recommendation_service import RecommendationService
 
+# All 7 deficiency targets
+NUTRIENT_TARGETS = ["iron", "calcium", "vitamin_d", "vitamin_b12", "zinc", "magnesium", "vitamin_c"]
+
+
 class PredictionService:
+
     @staticmethod
     def get_user_profile(user: User, data: Optional[PredictInput] = None) -> Dict[str, Any]:
         """
-        Extract user profile fields, prioritizing request payload (if provided)
-        and falling back to the database user profile. Converts gender strings to binary format.
+        Resolve patient demographics — request payload takes priority over stored profile.
+        Gender strings are normalised to 0 (Male) / 1 (Female).
+        BMI is auto-computed if missing but height/weight are available.
         """
-        # Read from input payload or DB User model
-        age = (data.age if data and data.age is not None else user.age)
-        gender_raw = (data.gender if data and data.gender is not None else user.gender)
-        weight_kg = (data.weight_kg if data and data.weight_kg is not None else user.weight)
-        height_cm = (data.height_cm if data and data.height_cm is not None else user.height)
-        bmi = (data.bmi if data and data.bmi is not None else user.bmi)
+        age            = (data.age if data and data.age is not None else user.age)
+        gender_raw     = (data.gender if data and data.gender is not None else user.gender)
+        weight_kg      = (data.weight_kg if data and data.weight_kg is not None else user.weight)
+        height_cm      = (data.height_cm if data and data.height_cm is not None else user.height)
+        bmi            = (data.bmi if data and data.bmi is not None else user.bmi)
         activity_level = (data.activity_level if data and data.activity_level is not None else user.activity_level)
-        race_ethnicity = (data.race_ethnicity if data and data.race_ethnicity is not None else 3) # default NHANES category
 
-        # Validate that all required demographics are present
+        # Validate required fields
         missing = []
-        if age is None: missing.append("age")
+        if age is None:       missing.append("age")
         if gender_raw is None: missing.append("gender")
-        if weight_kg is None: missing.append("weight")
-        if height_cm is None: missing.append("height")
+        if weight_kg is None:  missing.append("weight")
+        if height_cm is None:  missing.append("height")
 
         if missing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"The following profile fields are missing: {', '.join(missing)}. "
-                       f"Please update your profile or provide them in the request body."
+                detail=f"Missing required profile fields: {', '.join(missing)}. "
+                       f"Update your profile at PUT /api/v1/auth/profile."
             )
 
-        # Convert raw gender string/int to integer index (0 = Male, 1 = Female)
+        # Normalise gender → 0 (Male) / 1 (Female)
         gender_val: int
-        if isinstance(gender_raw, int) or isinstance(gender_raw, float):
-            gender_raw_int = int(gender_raw)
-            if gender_raw_int not in (0, 1):
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Gender value must be 0 (Male) or 1 (Female)"
-                )
-            gender_val = gender_raw_int
+        if isinstance(gender_raw, (int, float)):
+            gender_val = int(gender_raw)
         elif isinstance(gender_raw, str):
-            g_lower = gender_raw.strip().lower()
-            if g_lower in ("male", "m", "0"):
+            g = gender_raw.strip().lower()
+            if g in ("male", "m", "0"):
                 gender_val = 0
-            elif g_lower in ("female", "f", "1"):
+            elif g in ("female", "f", "1"):
                 gender_val = 1
             else:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Could not parse gender string '{gender_raw}'. Expected 'Male' or 'Female'."
-                )
+                gender_val = 0  # default for Other/Unknown
         else:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid type for gender field."
-            )
+            gender_val = 0
 
-        # Auto-compute BMI if missing but height and weight are provided
-        if bmi is None or bmi <= 0.0:
-            if height_cm > 0:
-                bmi = weight_kg / ((height_cm / 100.0) ** 2)
+        # Auto-compute BMI
+        if not bmi or bmi <= 0.0:
+            if height_cm and height_cm > 0:
+                bmi = round(weight_kg / ((height_cm / 100.0) ** 2), 2)
             else:
-                bmi = 22.0 # fallback default
+                bmi = 22.0
 
         return {
-            "age": float(age),
-            "gender": gender_val,
-            "weight_kg": float(weight_kg),
-            "height_cm": float(height_cm),
-            "bmi": float(bmi),
+            "age":            float(age),
+            "gender":         gender_val,
+            "weight_kg":      float(weight_kg),
+            "height_cm":      float(height_cm),
+            "bmi":            float(bmi),
             "activity_level": activity_level,
-            "race_ethnicity": int(race_ethnicity),
         }
 
     @staticmethod
     def calculate_daily_nutrient_totals(db: Session, user_id: int, target_date: date) -> Dict[str, float]:
         """
-        Aggregate total nutrient amounts consumed by the user today (UTC).
+        Aggregate all 14+ nutrient dimensions from today's food log entries.
+        Returns a flat dict with ML-ready column names.
         """
-        start_datetime = datetime.combine(target_date, time.min)
-        end_datetime = datetime.combine(target_date, time.max)
+        start_dt = datetime.combine(target_date, time.min)
+        end_dt   = datetime.combine(target_date, time.max)
 
-        summary = db.query(
-            func.sum(FoodLog.calories).label('calories'),
-            func.sum(FoodLog.protein).label('protein'),
-            func.sum(FoodLog.carbohydrates).label('carbohydrates'),
-            func.sum(FoodLog.fat).label('fat'),
-            func.sum(FoodLog.iron).label('iron'),
-            func.sum(FoodLog.calcium).label('calcium'),
-            func.sum(FoodLog.vitamin_d).label('vitamin_d'),
-            func.sum(FoodLog.vitamin_b12).label('vitamin_b12'),
-            func.sum(FoodLog.zinc).label('zinc')
+        r = db.query(
+            func.coalesce(func.sum(FoodLog.calories), 0.0).label('calories'),
+            func.coalesce(func.sum(FoodLog.protein), 0.0).label('protein'),
+            func.coalesce(func.sum(FoodLog.carbohydrates), 0.0).label('carbs'),
+            func.coalesce(func.sum(FoodLog.fat), 0.0).label('fat'),
+            func.coalesce(func.sum(FoodLog.fiber), 0.0).label('fiber'),
+            func.coalesce(func.sum(FoodLog.iron), 0.0).label('iron'),
+            func.coalesce(func.sum(FoodLog.calcium), 0.0).label('calcium'),
+            func.coalesce(func.sum(FoodLog.magnesium), 0.0).label('magnesium'),
+            func.coalesce(func.sum(FoodLog.zinc), 0.0).label('zinc'),
+            func.coalesce(func.sum(FoodLog.vitamin_c), 0.0).label('vitamin_c'),
+            func.coalesce(func.sum(FoodLog.vitamin_d), 0.0).label('vitamin_d'),
+            func.coalesce(func.sum(FoodLog.vitamin_b12), 0.0).label('vitamin_b12'),
+            func.coalesce(func.sum(FoodLog.vitamin_b6), 0.0).label('vitamin_b6'),
+            func.coalesce(func.sum(FoodLog.vitamin_a), 0.0).label('vitamin_a'),
         ).filter(
             FoodLog.user_id == user_id,
-            FoodLog.logged_at >= start_datetime,
-            FoodLog.logged_at <= end_datetime
+            FoodLog.logged_at >= start_dt,
+            FoodLog.logged_at <= end_dt
         ).first()
 
-        # Map to raw NHANES feature formats & units
         return {
-            "calories_kcal": float(summary.calories or 0.0),
-            "protein_g": float(summary.protein or 0.0),
-            "carbs_g": float(summary.carbohydrates or 0.0),
-            "fat_g": float(summary.fat or 0.0),
-            "iron_mg": float(summary.iron or 0.0),
-            "calcium_mg": float(summary.calcium or 0.0),
-            "vitamin_d_mcg": float(summary.vitamin_d or 0.0),
-            "vitamin_b12_mcg": float(summary.vitamin_b12 or 0.0),
-            "zinc_mg": float(summary.zinc or 0.0),
+            "calories_kcal":    float(r.calories),
+            "protein_g":        float(r.protein),
+            "carbs_g":          float(r.carbs),
+            "fat_g":            float(r.fat),
+            "fiber_g":          float(r.fiber),
+            "iron_mg":          float(r.iron),
+            "calcium_mg":       float(r.calcium),
+            "magnesium_mg":     float(r.magnesium),
+            "zinc_mg":          float(r.zinc),
+            "vitamin_c_mg":     float(r.vitamin_c),
+            "vitamin_d_mcg":    float(r.vitamin_d),
+            "vitamin_b12_mcg":  float(r.vitamin_b12),
+            "vitamin_b6_mg":    float(r.vitamin_b6),
+            "vitamin_a_mcg":    float(r.vitamin_a),
         }
 
     @classmethod
@@ -128,11 +140,9 @@ class PredictionService:
         current_user: User,
         data: Optional[PredictInput] = None
     ) -> PredictResponse:
-        """
-        Run the ML forecasting pipeline.
-        Calculates today's food log totals, resolves user profile, runs model, and stores history.
-        """
-        # 1. Resolve patient profile
+        """Full ML prediction pipeline — resolves profile, runs models, saves history, returns results."""
+
+        # 1. Resolve demographics
         profile = cls.get_user_profile(current_user, data)
 
         # 2. Get daily nutrient totals: allow payload override or date override
@@ -152,12 +162,15 @@ class PredictionService:
 
             nutrient_totals = cls.calculate_daily_nutrient_totals(db, current_user.id, target_date)
 
-        # 3. Call prediction model
+        # 2. Aggregate food log (using current UTC date)
+        today = datetime.utcnow().date()
+        nutrient_totals = cls.calculate_daily_nutrient_totals(db, current_user.id, today)
+
+        # 3. Run ML prediction
         try:
             predictions = run_prediction(
                 age=profile["age"],
                 gender=profile["gender"],
-                race_ethnicity=profile["race_ethnicity"],
                 weight_kg=profile["weight_kg"],
                 height_cm=profile["height_cm"],
                 bmi=profile["bmi"],
@@ -167,39 +180,40 @@ class PredictionService:
         except FileNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"Model files not configured. Please run training script first. ({e})"
+                detail=f"ML models not ready. Run `python ml/train.py` first. ({e})"
             )
 
-        # 4. Generate SHAP feature importances if requested
+        # 4. Generate SHAP explanations per nutrient
         include_shap = data.include_shap if data is not None else True
-        results = {}
-        nutrients_list = ["iron", "calcium", "vitamin_d", "vitamin_b12", "zinc"]
+        results: Dict[str, NutrientRisk] = {}
 
-        for nutrient in nutrients_list:
+        for nutrient in NUTRIENT_TARGETS:
             pred = predictions.get(nutrient, {"risk_score": 0.0, "risk_label": "Unknown"})
-
             shap_items = None
+
             if include_shap:
-                raw_shap = run_explanation(
-                    nutrient=nutrient,
-                    age=profile["age"],
-                    gender=profile["gender"],
-                    race_ethnicity=profile["race_ethnicity"],
-                    weight_kg=profile["weight_kg"],
-                    height_cm=profile["height_cm"],
-                    bmi=profile["bmi"],
-                    activity_level=profile["activity_level"],
-                    nutrient_totals=nutrient_totals,
-                )
-                if raw_shap:
-                    shap_items = [
-                        ShapFeature(
-                            feature=s["feature"],
-                            value=s["value"],
-                            contribution=s["contribution"]
-                        )
-                        for s in raw_shap
-                    ]
+                try:
+                    raw_shap = run_explanation(
+                        nutrient=nutrient,
+                        age=profile["age"],
+                        gender=profile["gender"],
+                        weight_kg=profile["weight_kg"],
+                        height_cm=profile["height_cm"],
+                        bmi=profile["bmi"],
+                        activity_level=profile["activity_level"],
+                        nutrient_totals=nutrient_totals,
+                    )
+                    if raw_shap:
+                        shap_items = [
+                            ShapFeature(
+                                feature=s["feature"],
+                                value=s["value"],
+                                contribution=s["contribution"]
+                            )
+                            for s in raw_shap
+                        ]
+                except Exception:
+                    pass  # SHAP is best-effort, don't fail the request
 
             results[nutrient] = NutrientRisk(
                 risk_score=pred["risk_score"],
@@ -207,7 +221,7 @@ class PredictionService:
                 explanation=shap_items,
             )
 
-        # 5. Persist prediction to the database
+        # 5. Persist to DB
         now = datetime.now(timezone.utc)
         history = PredictionHistory(
             user_id=current_user.id,
@@ -218,20 +232,17 @@ class PredictionService:
             zinc_risk=results["zinc"].risk_score,
             magnesium_risk=0.0,
             vitamin_c_risk=0.0,
+
+            magnesium_risk=results["magnesium"].risk_score,
+            vitamin_c_risk=results["vitamin_c"].risk_score,
             prediction_date=now,
         )
         db.add(history)
         db.commit()
         db.refresh(history)
 
-        # 6. Generate dietary recommendations
-        risk_dict = {
-            "iron": results["iron"].risk_score,
-            "calcium": results["calcium"].risk_score,
-            "vitamin_d": results["vitamin_d"].risk_score,
-            "vitamin_b12": results["vitamin_b12"].risk_score,
-            "zinc": results["zinc"].risk_score,
-        }
+        # 6. Generate recommendations
+        risk_dict = {n: results[n].risk_score for n in NUTRIENT_TARGETS}
         recs = RecommendationService.generate_recommendations(db, current_user, risk_dict)
 
         return PredictResponse(
@@ -239,9 +250,11 @@ class PredictionService:
             prediction_date=now,
             results=results,
             iron_risk=results["iron"].risk_score,
+            calcium_risk=results["calcium"].risk_score,
             vitamin_d_risk=results["vitamin_d"].risk_score,
             vitamin_b12_risk=results["vitamin_b12"].risk_score,
-            calcium_risk=results["calcium"].risk_score,
             zinc_risk=results["zinc"].risk_score,
+            magnesium_risk=results["magnesium"].risk_score,
+            vitamin_c_risk=results["vitamin_c"].risk_score,
             recommendations=recs,
         )
