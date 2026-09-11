@@ -219,7 +219,7 @@ const FoodLog: React.FC = () => {
         <div className="lg:col-span-6 space-y-4">
           <div className="glass-panel p-6 rounded-xl space-y-5">
             <h3 className="font-bold text-slate-200 text-sm flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-emerald-450" /> Search Food Database
+              <BookOpen className="h-4 w-4 text-emerald-400" /> Search Food Database
             </h3>
             
             <form onSubmit={handleSearch} className="relative">
@@ -254,11 +254,11 @@ const FoodLog: React.FC = () => {
                     className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
                       selectedFood?.id === item.id
                         ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                        : 'bg-slate-900/60 border-slate-850 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                     }`}
                   >
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold">{item.food_name}</span>
+                      <span className="font-semibold text-slate-200">{item.food_name}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-600" />
                     </div>
                   </div>
@@ -272,7 +272,7 @@ const FoodLog: React.FC = () => {
             {selectedFood && (
               <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/80 space-y-4 animate-fadeIn">
                 <div className="border-b border-slate-800/50 pb-2">
-                  <h4 className="font-bold text-slate-350 text-xs truncate">{selectedFood.food_name}</h4>
+                  <h4 className="font-bold text-slate-200 text-xs truncate">{selectedFood.food_name}</h4>
                   <span className="text-[10px] text-slate-500">USDA standard reference values per 100g</span>
                 </div>
 
@@ -291,7 +291,7 @@ const FoodLog: React.FC = () => {
                   ].map((nut) => (
                     <div key={nut.label} className="p-2 bg-slate-950/40 border border-slate-900 rounded-lg">
                       <span className="text-[9px] text-slate-500 uppercase tracking-wider block">{nut.label}</span>
-                      <span className="text-xs font-bold text-slate-350">{nut.val?.toFixed(2) ?? 0.0}</span>
+                      <span className="text-xs font-bold text-slate-200">{nut.val?.toFixed(2) ?? 0.0}</span>
                       <span className="text-[8px] text-slate-600 block">{nut.unit}</span>
                     </div>
                   ))}
@@ -314,7 +314,7 @@ const FoodLog: React.FC = () => {
                     <select
                       value={logMealType}
                       onChange={(e) => setLogMealType(e.target.value as any)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-900 text-slate-400 text-xs focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-900 text-slate-200 text-xs focus:outline-none"
                     >
                       {MEAL_TYPES.map((m) => (
                         <option key={m} value={m}>{m}</option>
@@ -323,7 +323,7 @@ const FoodLog: React.FC = () => {
                   </div>
                 </div>
 
-                {errorMessage && <p className="text-rose-455 text-xs">{errorMessage}</p>}
+                {errorMessage && <p className="text-rose-400 text-xs">{errorMessage}</p>}
 
                 <button
                   onClick={handleLogCatalogItem}
@@ -475,13 +475,13 @@ const FoodLog: React.FC = () => {
                 ))}
               </div>
 
-              {errorMessage && <p className="text-rose-455 text-xs">{errorMessage}</p>}
+              {errorMessage && <p className="text-rose-400 text-xs">{errorMessage}</p>}
 
               <div className="flex gap-3 pt-3 border-t border-slate-900/65">
                 <button
                   type="button"
                   onClick={() => { setCustomFormOpen(false); setErrorMessage(null); }}
-                  className="flex-1 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-300 text-xs font-semibold"
+                  className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
                 </button>

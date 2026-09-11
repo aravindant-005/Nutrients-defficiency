@@ -1,0 +1,58 @@
+{
+    "project_name": "Micronutrient Deficiency Risk Screening System",
+    "dataset_source": "CDC NHANES 2021-2023 (August 2021 - August 2023 Cycle)",
+    "recommender_source": "Indian Nutrient Databank (INDB)",
+    "nutrients_covered": [
+        "Iron",
+        "Calcium",
+        "Vitamin D",
+        "Vitamin B12",
+        "Zinc",
+        "Magnesium",
+        "Vitamin C"
+    ],
+    "models_saved": [
+        {
+            "nutrient": "IRON",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.9297,
+            "model_path": "models/best_model_IRON.pkl"
+        },
+        {
+            "nutrient": "CALCIUM",
+            "selected_model": "CatBoost",
+            "validation_roc_auc": 0.8057,
+            "model_path": "models/best_model_CALCIUM.pkl"
+        },
+        {
+            "nutrient": "VITAMIN_D",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.8086,
+            "model_path": "models/best_model_VITAMIN_D.pkl"
+        },
+        {
+            "nutrient": "VITAMIN_B12",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.7554,
+            "model_path": "models/best_model_VITAMIN_B12.pkl"
+        },
+        {
+            "nutrient": "ZINC",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.7775,
+            "model_path": "models/best_model_ZINC.pkl"
+        },
+        {
+            "nutrient": "MAGNESIUM",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.7922,
+            "model_path": "models/best_model_MAGNESIUM.pkl"
+        },
+        {
+            "nutrient": "VITAMIN_C",
+            "selected_model": "XGBoost",
+            "validation_roc_auc": 0.9038,
+            "model_path": "models/best_model_VITAMIN_C.pkl"
+        }
+    ]
+}

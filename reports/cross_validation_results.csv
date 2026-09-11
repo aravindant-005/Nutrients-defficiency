@@ -1,0 +1,36 @@
+Nutrient,Model,Train_Accuracy,Validation_Accuracy,Accuracy_Gap,Validation_ROC_AUC,Fit_Diagnostic,Best_Params
+iron,LogisticRegression,0.7209,0.7045,0.0165,0.8541,Well-Fitted,{'classifier__C': 0.01}
+iron,RandomForest,0.8937,0.8732,0.0205,0.924,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 5, 'classifier__max_depth': 6}"
+iron,ExtraTrees,0.657,0.6402,0.0168,0.8871,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 4}"
+iron,XGBoost,0.8693,0.8615,0.0078,0.9297,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+iron,CatBoost,0.9567,0.9117,0.0449,0.9135,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"
+calcium,LogisticRegression,0.7966,0.7978,-0.0012,0.7197,Well-Fitted,{'classifier__C': 10.0}
+calcium,RandomForest,0.9977,0.9927,0.005,0.7611,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 4}"
+calcium,ExtraTrees,0.9308,0.9296,0.0012,0.7483,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 4}"
+calcium,XGBoost,1.0,0.9955,0.0045,0.7696,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 200, 'classifier__max_depth': 7, 'classifier__learning_rate': 0.1}"
+calcium,CatBoost,1.0,0.9961,0.0039,0.8057,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 6}"
+vitamin_d,LogisticRegression,0.631,0.6112,0.0199,0.6442,Well-Fitted,{'classifier__C': 0.1}
+vitamin_d,RandomForest,0.8124,0.7207,0.0917,0.7782,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 10, 'classifier__max_depth': 8}"
+vitamin_d,ExtraTrees,0.7943,0.7475,0.0468,0.7862,Well-Fitted,"{'classifier__n_estimators': 150, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 8}"
+vitamin_d,XGBoost,0.7512,0.7134,0.0378,0.8086,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+vitamin_d,CatBoost,0.8177,0.7341,0.0836,0.8026,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"
+vitamin_b12,LogisticRegression,0.6707,0.6592,0.0114,0.6435,Well-Fitted,{'classifier__C': 0.01}
+vitamin_b12,RandomForest,0.8368,0.7799,0.0569,0.7403,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 10, 'classifier__max_depth': 8}"
+vitamin_b12,ExtraTrees,0.7675,0.7251,0.0424,0.7237,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 5, 'classifier__max_depth': 8}"
+vitamin_b12,XGBoost,0.6845,0.6464,0.0382,0.7554,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+vitamin_b12,CatBoost,0.8195,0.743,0.0764,0.7331,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"
+zinc,LogisticRegression,0.6266,0.6397,-0.0131,0.6834,Well-Fitted,{'classifier__C': 0.01}
+zinc,RandomForest,0.7457,0.6793,0.0664,0.7627,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 10, 'classifier__max_depth': 8}"
+zinc,ExtraTrees,0.6983,0.6788,0.0195,0.7355,Well-Fitted,"{'classifier__n_estimators': 150, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 8}"
+zinc,XGBoost,0.6594,0.6592,0.0002,0.7775,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+zinc,CatBoost,0.7774,0.7095,0.0679,0.7618,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"
+magnesium,LogisticRegression,0.6332,0.6352,-0.002,0.7169,Well-Fitted,{'classifier__C': 0.01}
+magnesium,RandomForest,0.7366,0.662,0.0746,0.7788,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 10, 'classifier__max_depth': 8}"
+magnesium,ExtraTrees,0.6722,0.667,0.0052,0.7905,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 5, 'classifier__max_depth': 8}"
+magnesium,XGBoost,0.6051,0.5978,0.0073,0.7922,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+magnesium,CatBoost,0.7779,0.6894,0.0885,0.7746,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"
+vitamin_c,LogisticRegression,0.7327,0.7475,-0.0148,0.7503,Well-Fitted,{'classifier__C': 10.0}
+vitamin_c,RandomForest,0.8296,0.781,0.0486,0.9008,Well-Fitted,"{'classifier__n_estimators': 100, 'classifier__min_samples_leaf': 10, 'classifier__max_depth': 8}"
+vitamin_c,ExtraTrees,0.7597,0.7525,0.0072,0.8808,Well-Fitted,"{'classifier__n_estimators': 150, 'classifier__min_samples_leaf': 2, 'classifier__max_depth': 8}"
+vitamin_c,XGBoost,0.7833,0.7715,0.0118,0.9038,Well-Fitted,"{'classifier__subsample': 0.9, 'classifier__n_estimators': 100, 'classifier__max_depth': 3, 'classifier__learning_rate': 0.05}"
+vitamin_c,CatBoost,0.849,0.7961,0.0529,0.8996,Well-Fitted,"{'classifier__iterations': 200, 'classifier__depth': 4}"

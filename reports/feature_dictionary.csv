@@ -1,0 +1,430 @@
+Column,Source,Type,Allowed_for_ML,Reason
+SEQN,NHANES 2021-2023,float64,No,Participant ID
+WTPH2YR,NHANES 2021-2023,float64,No,Survey Weight
+LBXSATSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSAL,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSALSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSAPSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSASSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSC3SI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSBU,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSBUSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSCLSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSCK,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSCR,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSCRSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSGB,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSGBSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSGL,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSGLSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSGTSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSGTLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSIR,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSIRSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSLDSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMAGN,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSOSSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSPH,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSPHSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSKSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSNASI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSTB,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSTBSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSTBLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSCA,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSCASI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSCH,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSCHSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSTP,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSTPSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSTR,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSTRSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXSUA,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDSUASI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+BMDSTATS,NHANES 2021-2023,float64,Yes,
+BMXWT,NHANES 2021-2023,float64,Yes,
+BMIWT,NHANES 2021-2023,float64,Yes,
+BMXRECUM,NHANES 2021-2023,float64,Yes,
+BMIRECUM,NHANES 2021-2023,float64,Yes,
+BMXHEAD,NHANES 2021-2023,float64,Yes,
+BMIHEAD,NHANES 2021-2023,float64,Yes,
+BMXHT,NHANES 2021-2023,float64,Yes,
+BMIHT,NHANES 2021-2023,float64,Yes,
+BMXBMI,NHANES 2021-2023,float64,Yes,
+BMDBMIC,NHANES 2021-2023,float64,Yes,
+BMXLEG,NHANES 2021-2023,float64,Yes,
+BMILEG,NHANES 2021-2023,float64,Yes,
+BMXARML,NHANES 2021-2023,float64,Yes,
+BMIARML,NHANES 2021-2023,float64,Yes,
+BMXARMC,NHANES 2021-2023,float64,Yes,
+BMIARMC,NHANES 2021-2023,float64,Yes,
+BMXWAIST,NHANES 2021-2023,float64,Yes,
+BMIWAIST,NHANES 2021-2023,float64,Yes,
+BMXHIP,NHANES 2021-2023,float64,Yes,
+BMIHIP,NHANES 2021-2023,float64,Yes,
+LBXWBCSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXLYPCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMOPCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXNEPCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXEOPCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXBAPCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDLYMNO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDMONO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDNENO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDEONO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBANO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXRBCSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXHGB,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXHCT,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMCVSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMCHSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXRDW,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXPLTSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXMPSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXNRBC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+SDDSRVYR,NHANES 2021-2023,float64,Yes,
+RIDSTATR,NHANES 2021-2023,float64,Yes,
+RIAGENDR,NHANES 2021-2023,float64,Yes,
+RIDAGEYR,NHANES 2021-2023,float64,Yes,
+RIDAGEMN,NHANES 2021-2023,float64,Yes,
+RIDRETH1,NHANES 2021-2023,float64,Yes,
+RIDRETH3,NHANES 2021-2023,float64,Yes,
+RIDEXMON,NHANES 2021-2023,float64,Yes,
+RIDEXAGM,NHANES 2021-2023,float64,Yes,
+DMQMILIZ,NHANES 2021-2023,float64,Yes,
+DMDBORN4,NHANES 2021-2023,float64,Yes,
+DMDYRUSR,NHANES 2021-2023,float64,Yes,
+DMDEDUC2,NHANES 2021-2023,float64,Yes,
+DMDMARTZ,NHANES 2021-2023,float64,Yes,
+RIDEXPRG,NHANES 2021-2023,float64,Yes,
+DMDHHSIZ,NHANES 2021-2023,float64,Yes,
+DMDHRGND,NHANES 2021-2023,float64,Yes,
+DMDHRAGZ,NHANES 2021-2023,float64,Yes,
+DMDHREDZ,NHANES 2021-2023,float64,Yes,
+DMDHRMAZ,NHANES 2021-2023,float64,Yes,
+DMDHSEDZ,NHANES 2021-2023,float64,Yes,
+WTINT2YR,NHANES 2021-2023,float64,No,Survey Weight
+WTMEC2YR,NHANES 2021-2023,float64,No,Survey Weight
+SDMVSTRA,NHANES 2021-2023,float64,Yes,
+SDMVPSU,NHANES 2021-2023,float64,Yes,
+INDFMPIR,NHANES 2021-2023,float64,Yes,
+WTDRD1,NHANES 2021-2023,float64,No,Survey Weight
+WTDR2D,NHANES 2021-2023,float64,No,Survey Weight
+DR1DRSTZ,NHANES 2021-2023,float64,Yes,
+DR1EXMER,NHANES 2021-2023,float64,Yes,
+DRABF,NHANES 2021-2023,float64,Yes,
+DRDINT,NHANES 2021-2023,float64,Yes,
+DR1DBIH,NHANES 2021-2023,float64,Yes,
+DR1DAY,NHANES 2021-2023,float64,Yes,
+DR1LANG,NHANES 2021-2023,float64,Yes,
+DR1MRESP,NHANES 2021-2023,float64,Yes,
+DR1HELP,NHANES 2021-2023,float64,Yes,
+DBQ095Z,NHANES 2021-2023,float64,Yes,
+DBD100,NHANES 2021-2023,float64,Yes,
+DRQSPREP,NHANES 2021-2023,float64,Yes,
+DR1STY,NHANES 2021-2023,float64,Yes,
+DR1SKY,NHANES 2021-2023,float64,Yes,
+DRQSDIET,NHANES 2021-2023,float64,Yes,
+DRQSDT1,NHANES 2021-2023,float64,Yes,
+DRQSDT2,NHANES 2021-2023,float64,Yes,
+DRQSDT3,NHANES 2021-2023,float64,Yes,
+DRQSDT4,NHANES 2021-2023,float64,Yes,
+DRQSDT5,NHANES 2021-2023,float64,Yes,
+DRQSDT6,NHANES 2021-2023,float64,Yes,
+DRQSDT7,NHANES 2021-2023,float64,Yes,
+DRQSDT8,NHANES 2021-2023,float64,Yes,
+DRQSDT9,NHANES 2021-2023,float64,Yes,
+DRQSDT10,NHANES 2021-2023,float64,Yes,
+DRQSDT11,NHANES 2021-2023,float64,Yes,
+DRQSDT12,NHANES 2021-2023,float64,Yes,
+DRQSDT91,NHANES 2021-2023,float64,Yes,
+DR1TNUMF,NHANES 2021-2023,float64,Yes,
+DR1TKCAL,NHANES 2021-2023,float64,Yes,
+DR1TPROT,NHANES 2021-2023,float64,Yes,
+DR1TCARB,NHANES 2021-2023,float64,Yes,
+DR1TSUGR,NHANES 2021-2023,float64,Yes,
+DR1TFIBE,NHANES 2021-2023,float64,Yes,
+DR1TTFAT,NHANES 2021-2023,float64,Yes,
+DR1TSFAT,NHANES 2021-2023,float64,Yes,
+DR1TMFAT,NHANES 2021-2023,float64,Yes,
+DR1TPFAT,NHANES 2021-2023,float64,Yes,
+DR1TCHOL,NHANES 2021-2023,float64,Yes,
+DR1TATOC,NHANES 2021-2023,float64,Yes,
+DR1TATOA,NHANES 2021-2023,float64,Yes,
+DR1TRET,NHANES 2021-2023,float64,Yes,
+DR1TVARA,NHANES 2021-2023,float64,Yes,
+DR1TACAR,NHANES 2021-2023,float64,Yes,
+DR1TBCAR,NHANES 2021-2023,float64,Yes,
+DR1TCRYP,NHANES 2021-2023,float64,Yes,
+DR1TLYCO,NHANES 2021-2023,float64,Yes,
+DR1TLZ,NHANES 2021-2023,float64,Yes,
+DR1TVB1,NHANES 2021-2023,float64,Yes,
+DR1TVB2,NHANES 2021-2023,float64,Yes,
+DR1TNIAC,NHANES 2021-2023,float64,Yes,
+DR1TVB6,NHANES 2021-2023,float64,Yes,
+DR1TFOLA,NHANES 2021-2023,float64,Yes,
+DR1TFA,NHANES 2021-2023,float64,Yes,
+DR1TFF,NHANES 2021-2023,float64,Yes,
+DR1TFDFE,NHANES 2021-2023,float64,Yes,
+DR1TCHL,NHANES 2021-2023,float64,Yes,
+DR1TVB12,NHANES 2021-2023,float64,Yes,
+DR1TB12A,NHANES 2021-2023,float64,Yes,
+DR1TVC,NHANES 2021-2023,float64,Yes,
+DR1TVD,NHANES 2021-2023,float64,Yes,
+DR1TVK,NHANES 2021-2023,float64,Yes,
+DR1TCALC,NHANES 2021-2023,float64,Yes,
+DR1TPHOS,NHANES 2021-2023,float64,Yes,
+DR1TMAGN,NHANES 2021-2023,float64,Yes,
+DR1TIRON,NHANES 2021-2023,float64,Yes,
+DR1TZINC,NHANES 2021-2023,float64,Yes,
+DR1TCOPP,NHANES 2021-2023,float64,Yes,
+DR1TSODI,NHANES 2021-2023,float64,Yes,
+DR1TPOTA,NHANES 2021-2023,float64,Yes,
+DR1TSELE,NHANES 2021-2023,float64,Yes,
+DR1TCAFF,NHANES 2021-2023,float64,Yes,
+DR1TTHEO,NHANES 2021-2023,float64,Yes,
+DR1TALCO,NHANES 2021-2023,float64,Yes,
+DR1TMOIS,NHANES 2021-2023,float64,Yes,
+DR1TS040,NHANES 2021-2023,float64,Yes,
+DR1TS060,NHANES 2021-2023,float64,Yes,
+DR1TS080,NHANES 2021-2023,float64,Yes,
+DR1TS100,NHANES 2021-2023,float64,Yes,
+DR1TS120,NHANES 2021-2023,float64,Yes,
+DR1TS140,NHANES 2021-2023,float64,Yes,
+DR1TS160,NHANES 2021-2023,float64,Yes,
+DR1TS180,NHANES 2021-2023,float64,Yes,
+DR1TM161,NHANES 2021-2023,float64,Yes,
+DR1TM181,NHANES 2021-2023,float64,Yes,
+DR1TM201,NHANES 2021-2023,float64,Yes,
+DR1TM221,NHANES 2021-2023,float64,Yes,
+DR1TP182,NHANES 2021-2023,float64,Yes,
+DR1TP183,NHANES 2021-2023,float64,Yes,
+DR1TP184,NHANES 2021-2023,float64,Yes,
+DR1TP204,NHANES 2021-2023,float64,Yes,
+DR1TP205,NHANES 2021-2023,float64,Yes,
+DR1TP225,NHANES 2021-2023,float64,Yes,
+DR1TP226,NHANES 2021-2023,float64,Yes,
+DR1_300,NHANES 2021-2023,float64,Yes,
+DR1_320Z,NHANES 2021-2023,float64,Yes,
+DR1_330Z,NHANES 2021-2023,float64,Yes,
+DR1BWATZ,NHANES 2021-2023,float64,Yes,
+DR1TWSZ,NHANES 2021-2023,float64,Yes,
+DRD340,NHANES 2021-2023,float64,Yes,
+DRD350A,NHANES 2021-2023,float64,Yes,
+DRD350AQ,NHANES 2021-2023,float64,Yes,
+DRD350B,NHANES 2021-2023,float64,Yes,
+DRD350BQ,NHANES 2021-2023,float64,Yes,
+DRD350C,NHANES 2021-2023,float64,Yes,
+DRD350CQ,NHANES 2021-2023,float64,Yes,
+DRD350D,NHANES 2021-2023,float64,Yes,
+DRD350DQ,NHANES 2021-2023,float64,Yes,
+DRD350E,NHANES 2021-2023,float64,Yes,
+DRD350EQ,NHANES 2021-2023,float64,Yes,
+DRD350F,NHANES 2021-2023,float64,Yes,
+DRD350FQ,NHANES 2021-2023,float64,Yes,
+DRD350G,NHANES 2021-2023,float64,Yes,
+DRD350GQ,NHANES 2021-2023,float64,Yes,
+DRD350H,NHANES 2021-2023,float64,Yes,
+DRD350HQ,NHANES 2021-2023,float64,Yes,
+DRD350I,NHANES 2021-2023,float64,Yes,
+DRD350IQ,NHANES 2021-2023,float64,Yes,
+DRD350J,NHANES 2021-2023,float64,Yes,
+DRD350JQ,NHANES 2021-2023,float64,Yes,
+DRD350K,NHANES 2021-2023,float64,Yes,
+DRD360,NHANES 2021-2023,float64,Yes,
+DRD370A,NHANES 2021-2023,float64,Yes,
+DRD370AQ,NHANES 2021-2023,float64,Yes,
+DRD370B,NHANES 2021-2023,float64,Yes,
+DRD370BQ,NHANES 2021-2023,float64,Yes,
+DRD370C,NHANES 2021-2023,float64,Yes,
+DRD370CQ,NHANES 2021-2023,float64,Yes,
+DRD370D,NHANES 2021-2023,float64,Yes,
+DRD370DQ,NHANES 2021-2023,float64,Yes,
+DRD370E,NHANES 2021-2023,float64,Yes,
+DRD370EQ,NHANES 2021-2023,float64,Yes,
+DRD370F,NHANES 2021-2023,float64,Yes,
+DRD370FQ,NHANES 2021-2023,float64,Yes,
+DRD370G,NHANES 2021-2023,float64,Yes,
+DRD370GQ,NHANES 2021-2023,float64,Yes,
+DRD370H,NHANES 2021-2023,float64,Yes,
+DRD370HQ,NHANES 2021-2023,float64,Yes,
+DRD370I,NHANES 2021-2023,float64,Yes,
+DRD370IQ,NHANES 2021-2023,float64,Yes,
+DRD370J,NHANES 2021-2023,float64,Yes,
+DRD370JQ,NHANES 2021-2023,float64,Yes,
+DRD370K,NHANES 2021-2023,float64,Yes,
+DRD370KQ,NHANES 2021-2023,float64,Yes,
+DRD370L,NHANES 2021-2023,float64,Yes,
+DRD370LQ,NHANES 2021-2023,float64,Yes,
+DRD370M,NHANES 2021-2023,float64,Yes,
+DRD370MQ,NHANES 2021-2023,float64,Yes,
+DRD370N,NHANES 2021-2023,float64,Yes,
+DRD370NQ,NHANES 2021-2023,float64,Yes,
+DRD370O,NHANES 2021-2023,float64,Yes,
+DRD370OQ,NHANES 2021-2023,float64,Yes,
+DRD370P,NHANES 2021-2023,float64,Yes,
+DRD370PQ,NHANES 2021-2023,float64,Yes,
+DRD370Q,NHANES 2021-2023,float64,Yes,
+DRD370QQ,NHANES 2021-2023,float64,Yes,
+DRD370R,NHANES 2021-2023,float64,Yes,
+DRD370RQ,NHANES 2021-2023,float64,Yes,
+DRD370S,NHANES 2021-2023,float64,Yes,
+DRD370SQ,NHANES 2021-2023,float64,Yes,
+DRD370T,NHANES 2021-2023,float64,Yes,
+DRD370TQ,NHANES 2021-2023,float64,Yes,
+DRD370U,NHANES 2021-2023,float64,Yes,
+DRD370UQ,NHANES 2021-2023,float64,Yes,
+DRD370V,NHANES 2021-2023,float64,Yes,
+DR2DRSTZ,NHANES 2021-2023,float64,Yes,
+DR2EXMER,NHANES 2021-2023,float64,Yes,
+DR2DBIH,NHANES 2021-2023,float64,Yes,
+DR2DAY,NHANES 2021-2023,float64,Yes,
+DR2LANG,NHANES 2021-2023,float64,Yes,
+DR2MRESP,NHANES 2021-2023,float64,Yes,
+DR2HELP,NHANES 2021-2023,float64,Yes,
+DR2TNUMF,NHANES 2021-2023,float64,Yes,
+DR2STY,NHANES 2021-2023,float64,Yes,
+DR2SKY,NHANES 2021-2023,float64,Yes,
+DR2TKCAL,NHANES 2021-2023,float64,Yes,
+DR2TPROT,NHANES 2021-2023,float64,Yes,
+DR2TCARB,NHANES 2021-2023,float64,Yes,
+DR2TSUGR,NHANES 2021-2023,float64,Yes,
+DR2TFIBE,NHANES 2021-2023,float64,Yes,
+DR2TTFAT,NHANES 2021-2023,float64,Yes,
+DR2TSFAT,NHANES 2021-2023,float64,Yes,
+DR2TMFAT,NHANES 2021-2023,float64,Yes,
+DR2TPFAT,NHANES 2021-2023,float64,Yes,
+DR2TCHOL,NHANES 2021-2023,float64,Yes,
+DR2TATOC,NHANES 2021-2023,float64,Yes,
+DR2TATOA,NHANES 2021-2023,float64,Yes,
+DR2TRET,NHANES 2021-2023,float64,Yes,
+DR2TVARA,NHANES 2021-2023,float64,Yes,
+DR2TACAR,NHANES 2021-2023,float64,Yes,
+DR2TBCAR,NHANES 2021-2023,float64,Yes,
+DR2TCRYP,NHANES 2021-2023,float64,Yes,
+DR2TLYCO,NHANES 2021-2023,float64,Yes,
+DR2TLZ,NHANES 2021-2023,float64,Yes,
+DR2TVB1,NHANES 2021-2023,float64,Yes,
+DR2TVB2,NHANES 2021-2023,float64,Yes,
+DR2TNIAC,NHANES 2021-2023,float64,Yes,
+DR2TVB6,NHANES 2021-2023,float64,Yes,
+DR2TFOLA,NHANES 2021-2023,float64,Yes,
+DR2TFA,NHANES 2021-2023,float64,Yes,
+DR2TFF,NHANES 2021-2023,float64,Yes,
+DR2TFDFE,NHANES 2021-2023,float64,Yes,
+DR2TCHL,NHANES 2021-2023,float64,Yes,
+DR2TVB12,NHANES 2021-2023,float64,Yes,
+DR2TB12A,NHANES 2021-2023,float64,Yes,
+DR2TVC,NHANES 2021-2023,float64,Yes,
+DR2TVD,NHANES 2021-2023,float64,Yes,
+DR2TVK,NHANES 2021-2023,float64,Yes,
+DR2TCALC,NHANES 2021-2023,float64,Yes,
+DR2TPHOS,NHANES 2021-2023,float64,Yes,
+DR2TMAGN,NHANES 2021-2023,float64,Yes,
+DR2TIRON,NHANES 2021-2023,float64,Yes,
+DR2TZINC,NHANES 2021-2023,float64,Yes,
+DR2TCOPP,NHANES 2021-2023,float64,Yes,
+DR2TSODI,NHANES 2021-2023,float64,Yes,
+DR2TPOTA,NHANES 2021-2023,float64,Yes,
+DR2TSELE,NHANES 2021-2023,float64,Yes,
+DR2TCAFF,NHANES 2021-2023,float64,Yes,
+DR2TTHEO,NHANES 2021-2023,float64,Yes,
+DR2TALCO,NHANES 2021-2023,float64,Yes,
+DR2TMOIS,NHANES 2021-2023,float64,Yes,
+DR2TS040,NHANES 2021-2023,float64,Yes,
+DR2TS060,NHANES 2021-2023,float64,Yes,
+DR2TS080,NHANES 2021-2023,float64,Yes,
+DR2TS100,NHANES 2021-2023,float64,Yes,
+DR2TS120,NHANES 2021-2023,float64,Yes,
+DR2TS140,NHANES 2021-2023,float64,Yes,
+DR2TS160,NHANES 2021-2023,float64,Yes,
+DR2TS180,NHANES 2021-2023,float64,Yes,
+DR2TM161,NHANES 2021-2023,float64,Yes,
+DR2TM181,NHANES 2021-2023,float64,Yes,
+DR2TM201,NHANES 2021-2023,float64,Yes,
+DR2TM221,NHANES 2021-2023,float64,Yes,
+DR2TP182,NHANES 2021-2023,float64,Yes,
+DR2TP183,NHANES 2021-2023,float64,Yes,
+DR2TP184,NHANES 2021-2023,float64,Yes,
+DR2TP204,NHANES 2021-2023,float64,Yes,
+DR2TP205,NHANES 2021-2023,float64,Yes,
+DR2TP225,NHANES 2021-2023,float64,Yes,
+DR2TP226,NHANES 2021-2023,float64,Yes,
+DR2_300,NHANES 2021-2023,float64,Yes,
+DR2_320Z,NHANES 2021-2023,float64,Yes,
+DR2_330Z,NHANES 2021-2023,float64,Yes,
+DR2BWATZ,NHANES 2021-2023,float64,Yes,
+DR2TWSZ,NHANES 2021-2023,float64,Yes,
+DSDPID,NHANES 2021-2023,float64,Yes,
+DSDSUPP,NHANES 2021-2023,object,Yes,
+DSDANTA,NHANES 2021-2023,float64,Yes,
+DSD070,NHANES 2021-2023,float64,Yes,
+DSDMTCH,NHANES 2021-2023,float64,Yes,
+DSD103,NHANES 2021-2023,float64,Yes,
+DSD122Q,NHANES 2021-2023,float64,Yes,
+DSD122U,NHANES 2021-2023,float64,Yes,
+DSDACTSS,NHANES 2021-2023,float64,Yes,
+DSQIKCAL,NHANES 2021-2023,float64,Yes,
+DSQIPROT,NHANES 2021-2023,float64,Yes,
+DSQICARB,NHANES 2021-2023,float64,Yes,
+DSQISUGR,NHANES 2021-2023,float64,Yes,
+DSQIFIBE,NHANES 2021-2023,float64,Yes,
+DSQITFAT,NHANES 2021-2023,float64,Yes,
+DSQISFAT,NHANES 2021-2023,float64,Yes,
+DSQIMFAT,NHANES 2021-2023,float64,Yes,
+DSQIPFAT,NHANES 2021-2023,float64,Yes,
+DSQICHOL,NHANES 2021-2023,float64,Yes,
+DSQILYCO,NHANES 2021-2023,float64,Yes,
+DSQILZ,NHANES 2021-2023,float64,Yes,
+DSQIVB1,NHANES 2021-2023,float64,Yes,
+DSQIVB2,NHANES 2021-2023,float64,Yes,
+DSQINIAC,NHANES 2021-2023,float64,Yes,
+DSQIVB6,NHANES 2021-2023,float64,Yes,
+DSQIFA,NHANES 2021-2023,float64,Yes,
+DSQIFDFE,NHANES 2021-2023,float64,Yes,
+DSQICHL,NHANES 2021-2023,float64,Yes,
+DSQIVB12,NHANES 2021-2023,float64,Yes,
+DSQIVC,NHANES 2021-2023,float64,Yes,
+DSQIVK,NHANES 2021-2023,float64,Yes,
+DSQIVD,NHANES 2021-2023,float64,Yes,
+DSQICALC,NHANES 2021-2023,float64,Yes,
+DSQIPHOS,NHANES 2021-2023,float64,Yes,
+DSQIMAGN,NHANES 2021-2023,float64,Yes,
+DSQIIRON,NHANES 2021-2023,float64,Yes,
+DSQIZINC,NHANES 2021-2023,float64,Yes,
+DSQICOPP,NHANES 2021-2023,float64,Yes,
+DSQISODI,NHANES 2021-2023,float64,Yes,
+DSQIPOTA,NHANES 2021-2023,float64,Yes,
+DSQISELE,NHANES 2021-2023,float64,Yes,
+DSQICAFF,NHANES 2021-2023,float64,Yes,
+DSQIIODI,NHANES 2021-2023,float64,Yes,
+LBXFER,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDFERSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDRFO,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDRFOSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXHSCRP,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDHRPLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXBPB,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBPBSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBPBLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXBCD,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBCDSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBCDLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXTHG,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDTHGSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDTHGLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXBSE,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBSESI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBSELC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXBMN,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBMNSI,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDBMNLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXVIDMS,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDVIDLC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXVD2MS,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDVD2LC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXVD3MS,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDVD3LC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBXVE3MS,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion
+LBDVE3LC,NHANES 2021-2023,float64,No,Lab Biomarker - Reserved for Target Generation or Leakage Exclusion

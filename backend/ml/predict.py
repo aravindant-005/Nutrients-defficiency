@@ -211,14 +211,6 @@ def predict_deficiencies(
         dict mapping nutrient name -> risk probability (0.0 – 1.0)
         Value is None if that model is not yet trained.
     """
-    feature_map = {
-        "age":            age,
-        "gender":         gender,
-        "race_ethnicity": race_ethnicity,
-        "weight_kg":      weight_kg,
-        "height_cm":      height_cm,
-        "bmi":            bmi,
-
     feature_names = get_feature_names()
 
     feature_map: Dict[str, float] = {

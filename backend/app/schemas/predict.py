@@ -10,8 +10,7 @@ class PredictInput(BaseModel):
     Optional demographic overrides. If not provided, values are taken from the
     authenticated user's stored profile.
     """
-    age: Optional[float]          = Field(None, ge=18, le=100, description="Age in years")
-    # Accept either numeric code or string label from frontend (e.g. 0/1 or 'Male'/'Female')
+    age: Optional[float]          = Field(None, ge=1, le=120, description="Age in years")
     gender: Optional[Union[int, str]] = Field(None, description="0/1 or 'Male'/'Female'")
     race_ethnicity: Optional[int] = Field(3,    ge=1, le=7,    description="NHANES race/ethnicity code (1-7)")
     weight_kg: Optional[float]    = Field(None, gt=0,          description="Body weight in kilograms")
@@ -19,18 +18,8 @@ class PredictInput(BaseModel):
     bmi: Optional[float]          = Field(None, gt=0,          description="Body Mass Index (kg/m^2)")
     activity_level: Optional[str] = Field(None,                description="User physical activity level")
     include_shap: bool            = Field(True,                description="Include SHAP feature explanations")
-    # Optional override: aggregate food log for a specific date (YYYY-MM-DD)
     date_str: Optional[str]       = Field(None,                description="Optional date (YYYY-MM-DD) to use for food log aggregation")
-    # Optional: frontend can supply already-aggregated nutrient totals to bypass DB aggregation
     nutrient_totals: Optional[Dict[str, float]] = Field(None, description="Optional per-nutrient totals to use for prediction")
-
-    age: Optional[float]          = Field(None, ge=1, le=120, description="Age in years")
-    gender: Optional[Union[str, int]] = Field(None, description="Male / Female / Other or 0/1")
-    weight_kg: Optional[float]    = Field(None, gt=0, description="Body weight in kilograms")
-    height_cm: Optional[float]    = Field(None, gt=0, description="Height in centimetres")
-    bmi: Optional[float]          = Field(None, gt=0, description="Body Mass Index (kg/m²)")
-    activity_level: Optional[str] = Field(None, description="Physical activity level")
-    include_shap: bool            = Field(True, description="Include SHAP feature explanations")
 
 
 # ── SHAP Explanation ──────────────────────────────────────────────────────────

@@ -1,0 +1,8 @@
+Nutrient,Target_Created_From,Variables_To_Exclude,Source_File,Leakage_Prevention_Status
+Iron,Serum Ferritin (LBXFER),"LBXFER, LBDFERSI",FERTIN_L.xpt,Enforced
+Calcium,Total Calcium (LBXSCA),"LBXSCA, LBDSCASI",BIOPRO_L.xpt,Enforced
+Vitamin D,25(OH)D (LBXVIDMS),"LBXVIDMS, LBDVIDLC, LBXVD2MS, LBXVD3MS",VID_L.xpt,Enforced
+Vitamin B12 / Folate,Serum Folate (LBDRFO),"LBDRFO, LBDRFOSI",FOLATE_L.xpt,Enforced
+Zinc,Blood Zinc / Manganese (LBXBMN),"LBXBMN, LBDBMNSI",PBCD_L.xpt,Enforced
+Magnesium,Serum Magnesium (LBXMAGN),LBXMAGN,BIOPRO_L.xpt,Enforced
+Vitamin C,Dietary Intake Adequacy (DR1TVC),None (Dietary target),DR1TOT_L.xpt,Enforced

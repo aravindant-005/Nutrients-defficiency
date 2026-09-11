@@ -263,7 +263,16 @@ class RecommendationService:
                 if is_vegetarian and not item["is_vegetarian"]:
                     continue
                 if not any(f.food_name.lower() == item["food_name"].lower() for f in foods_to_eat):
-                    foods_to_eat.append(RecommendationFoodItem(**item))
+                    foods_to_eat.append(
+                        RecommendationFoodItem(
+                            food_name=item["food_name"],
+                            nutrient_amount=item.get("nutrient_amount", item.get("amount", 0.0)),
+                            unit=item["unit"],
+                            is_vegetarian=item.get("is_vegetarian", True),
+                            is_indian=item.get("is_indian", False),
+                            meal_suggestion=item.get("meal_suggestion"),
+                        )
+                    )
 
             if nut in FOODS_TO_AVOID:
                 foods_to_avoid.append(FOODS_TO_AVOID[nut])

@@ -2,581 +2,213 @@
 ml/train.py
 -----------
 Trains Random Forest and XGBoost classifiers for each of 7 micronutrient deficiency targets
-using synthetic NHANES-augmented training data.
+using real engineered NHANES dataset (processed_data/train_engineered.csv and val_engineered.csv).
 
 Deficiency Targets (7):
   iron, calcium, vitamin_d, vitamin_b12, zinc, magnesium, vitamin_c
 
-Feature Dimensions (14+5 = 19 total):
-  Demographic  : age, gender, bmi, weight_kg, height_cm
-  Nutrient log : calories_kcal, protein_g, carbs_g, fat_g, fiber_g,
-                 iron_mg, calcium_mg, vitamin_d_mcg, vitamin_b12_mcg,
-                 zinc_mg, magnesium_mg, vitamin_c_mg, vitamin_b6_mg, vitamin_a_mcg
-
-Models Trained:
-  1. Random Forest
-  2. XGBoost
-
-Selection: best ROC-AUC + 5-fold Cross Validation
-Inference: ensemble average of RF + XGBoost when both models are available
-Saved to : ml/models/{nutrient}_model.json  (XGBoost)
-           ml/models/{nutrient}_model.pkl   (Random Forest)
-           ml/models/feature_names.json
-           ml/models/metrics.json
-           ml/models/comparison_table.csv
-
-Run:
-    cd e:/nutrients/backend
-    python ml/train.py
+Calculates and displays Training Accuracy and Testing (Validation) Accuracy for Random Forest and XGBoost
+to diagnose Overfitting vs Underfitting. Automatically selects the best model based on ROC-AUC score.
 """
 import os
 import sys
 import json
 import pickle
+import logging
 import warnings
-import textwrap
 
 import numpy as np
 import pandas as pd
-import xgboost as xgb
+from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, StratifiedKFold, RandomizedSearchCV
-
-warnings.filterwarnings("ignore")
-
-# ── Scikit-learn imports ───────────────────────────────────────────────────────
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, classification_report
+    f1_score, roc_auc_score, confusion_matrix, classification_report
 )
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.calibration import CalibratedClassifierCV
-from scipy.stats import randint, uniform
-
-
-def get_transform_output_feature_names(preprocessor: ColumnTransformer) -> list:
-    """Return the output feature names for a fitted ColumnTransformer."""
-    output_names = []
-    for name, transformer, cols in preprocessor.transformers_:
-        if name == "remainder" or transformer == "drop" or transformer is None:
-            continue
-        if isinstance(cols, str):
-            cols = [cols]
-        if hasattr(transformer, "get_feature_names_out"):
-            try:
-                feature_names = transformer.get_feature_names_out(cols)
-            except Exception:
-                try:
-                    feature_names = transformer.get_feature_names_out()
-                except Exception:
-                    feature_names = cols
-        else:
-            feature_names = [f"{name}__{c}" for c in cols]
-        output_names.extend(list(feature_names))
-    return output_names
-
+import joblib
 import xgboost as xgb
-from typing import Dict
 
-try:
-    import lightgbm as lgb
-    HAS_LIGHTGBM = True
-except ImportError:
-    HAS_LIGHTGBM = False
-    print("⚠  LightGBM not installed — skipping LGBMClassifier")
+warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROC_DIR   = os.path.join(BASE_DIR, "data", "processed")
 MODELS_DIR = os.path.join(BASE_DIR, "ml", "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-# Expanded features: demographics + basic nutrient totals (improves predictive power)
-FEATURE_COLS = ["age", "gender", "race_ethnicity", "weight_kg", "height_cm", "bmi"]
-NUTRIENT_COLS = [
-    "calories_kcal", "protein_g", "carbs_g", "fat_g",
-    "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "zinc_mg"
-# ── Feature / Target config ────────────────────────────────────────────────────
-FEATURE_COLS = [
-    "age", "gender", "bmi", "weight_kg", "height_cm",
-    "calories_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g",
-    "iron_mg", "calcium_mg", "vitamin_d_mcg", "vitamin_b12_mcg",
-    "zinc_mg", "magnesium_mg", "vitamin_c_mg", "vitamin_b6_mg", "vitamin_a_mcg",
-]
-
-# NHANES serum biomarker deficiency thresholds → binary label columns
-TARGETS = {
-    "iron":        "label_iron",
-    "calcium":     "label_calcium",
-    "vitamin_d":   "label_vitamin_d",
-    "vitamin_b12": "label_vitamin_b12",
-    "zinc":        "label_zinc",
-    "magnesium":   "label_magnesium",
-    "vitamin_c":   "label_vitamin_c",
+TARGET_MAP = {
+    "iron": "target_iron",
+    "calcium": "target_calcium",
+    "vitamin_d": "target_vitamin_d",
+    "vitamin_b12": "target_vitamin_b12",
+    "zinc": "target_zinc",
+    "magnesium": "target_magnesium",
+    "vitamin_c": "target_vitamin_c",
 }
 
 RANDOM_STATE = 42
-TEST_SIZE    = 0.20
-CV_FOLDS     = 5
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
-
-def evaluate(y_true, y_pred, y_prob):
-    """Compute Accuracy, Precision, Recall, F1, ROC-AUC, and CV-AUC."""
-    return {
-        "accuracy":  round(accuracy_score(y_true, y_pred), 4),
-        "precision": round(precision_score(y_true, y_pred, zero_division=0), 4),
-        "recall":    round(recall_score(y_true, y_pred, zero_division=0), 4),
-        "f1":        round(f1_score(y_true, y_pred, zero_division=0), 4),
-        "roc_auc":   round(roc_auc_score(y_true, y_prob), 4),
-    }
-
-
-def train_xgboost(X_train, y_train, X_test, scale_pos_weight: float) -> tuple:
-    """Train XGBoost and return (model, y_pred, y_prob). Uses randomized search CV."""
-    # Use RandomizedSearchCV to tune XGBoost hyperparameters
-    base = xgb.XGBClassifier(eval_metric="logloss", random_state=RANDOM_STATE, n_jobs=-1)
-    param_dist = {
-        "n_estimators": [100, 300, 500],
-        "max_depth": [3, 6, 8],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "subsample": [0.6, 0.8, 1.0],
-        "colsample_bytree": [0.6, 0.8, 1.0],
-        "scale_pos_weight": [scale_pos_weight]
-    }
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    rs = RandomizedSearchCV(base, param_distributions=param_dist, n_iter=12, scoring="roc_auc", cv=cv, n_jobs=-1, random_state=RANDOM_STATE, verbose=0)
-    rs.fit(X_train, y_train)
-    best = rs.best_estimator_
-    y_prob = best.predict_proba(X_test)[:, 1]
-    y_pred = best.predict(X_test)
-    return best, y_pred, y_prob
-
-
-def train_random_forest(X_train, y_train, X_test, scale_pos_weight: float) -> tuple:
-    """Train Random Forest and return (model, y_pred, y_prob). Uses randomized search CV and calibration."""
-    # Use RandomizedSearchCV to tune RandomForest hyperparameters
-    # Convert scale_pos_weight to class_weight dict
-    class_weight = {0: 1.0, 1: max(1.0, scale_pos_weight)}
-    base = RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=-1)
-    param_dist = {
-        "n_estimators": randint(100, 600),
-        "max_depth": [None, 6, 12, 20],
-        "min_samples_leaf": [1, 3, 5],
-        "class_weight": [None, "balanced", class_weight]
-    }
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    rs = RandomizedSearchCV(base, param_distributions=param_dist, n_iter=12, scoring="roc_auc", cv=cv, n_jobs=-1, random_state=RANDOM_STATE, verbose=0)
-    rs.fit(X_train, y_train)
-    best = rs.best_estimator_
-    # Calibrate probabilities for better probability estimates
-    try:
-        calib = CalibratedClassifierCV(best, cv=3)
-        calib.fit(X_train, y_train)
-        y_prob = calib.predict_proba(X_test)[:, 1]
-        y_pred = calib.predict(X_test)
-        return calib, y_pred, y_prob
-    except Exception:
-        y_prob = best.predict_proba(X_test)[:, 1]
-        y_pred = best.predict(X_test)
-        return best, y_pred, y_prob
-
-
-def save_model(nutrient: str, model, model_type: str) -> str:
-    """Save model to disk. Returns the saved path."""
-def save_model(nutrient, model, model_type):
-    """Persist a trained model to disk."""
-    if model_type == "xgboost":
-        path = os.path.join(MODELS_DIR, f"{nutrient}_model.json")
-        model.save_model(path)
-    else:
-        path = os.path.join(MODELS_DIR, f"{nutrient}_model.pkl")
-        with open(path, "wb") as f:
-            pickle.dump(model, f)
-    return path
-
-
-def write_model_type(nutrient, model_type):
-    """Persist the current model type for a nutrient."""
-    with open(os.path.join(MODELS_DIR, f"{nutrient}_model_type.txt"), "w") as f:
-        f.write(model_type)
-
-
-def add_nutrient_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Augment NHANES demographic data with synthetic nutrient intake columns
-    using realistic RDA-based distributions correlated with deficiency labels.
-    """
-    rng = np.random.default_rng(RANDOM_STATE)
-    n = len(df)
-
-    def _noisy(mean, std, low=0.0):
-        return np.clip(rng.normal(mean, std, n), low, None)
-
-    # ── Nutrient intake columns (simulated from dietary surveys) ──────────────
-    # Iron: RDA ~17mg women, ~8mg men. Deficient individuals consume less.
-    if "label_iron" in df.columns:
-        iron_deficient = df["label_iron"].values
-        df["iron_mg"] = np.where(
-            iron_deficient,
-            _noisy(6.0, 2.5, 0.5),    # deficient: low intake
-            _noisy(14.0, 4.0, 1.0)    # adequate: near/above RDA
-        )
-    else:
-        df["iron_mg"] = _noisy(10.0, 4.0, 0.5)
-
-    # Calcium: RDA 1000mg
-    if "label_calcium" in df.columns:
-        cal_def = df["label_calcium"].values
-        df["calcium_mg"] = np.where(cal_def, _noisy(450, 150, 50), _noisy(900, 200, 100))
-    else:
-        df["calcium_mg"] = _noisy(750, 200, 50)
-
-    # Vitamin D: RDA 15 mcg
-    if "label_vitamin_d" in df.columns:
-        vd_def = df["label_vitamin_d"].values
-        df["vitamin_d_mcg"] = np.where(vd_def, _noisy(2.5, 1.5, 0.0), _noisy(9.0, 4.0, 0.5))
-    else:
-        df["vitamin_d_mcg"] = _noisy(6.0, 3.5, 0.0)
-
-    # Vitamin B12: RDA 2.4 mcg
-    if "label_vitamin_b12" in df.columns:
-        b12_def = df["label_vitamin_b12"].values
-        df["vitamin_b12_mcg"] = np.where(b12_def, _noisy(0.8, 0.5, 0.0), _noisy(3.5, 1.5, 0.2))
-    else:
-        df["vitamin_b12_mcg"] = _noisy(2.5, 1.5, 0.0)
-
-    # Zinc: RDA 11mg men, 8mg women
-    if "label_zinc" in df.columns:
-        zn_def = df["label_zinc"].values
-        df["zinc_mg"] = np.where(zn_def, _noisy(4.0, 1.5, 0.5), _noisy(9.5, 2.5, 1.0))
-    else:
-        df["zinc_mg"] = _noisy(7.5, 2.5, 0.5)
-
-    # Magnesium: RDA 400mg men, 310mg women
-    if "label_magnesium" not in df.columns:
-        # Derive magnesium label from low intake
-        df["magnesium_mg"] = _noisy(250, 80, 30)
-        df["label_magnesium"] = (df["magnesium_mg"] < 200).astype(int)
-    else:
-        mg_def = df["label_magnesium"].values
-        df["magnesium_mg"] = np.where(mg_def, _noisy(150, 50, 20), _noisy(320, 80, 80))
-
-    # Vitamin C: RDA 75-90mg
-    if "label_vitamin_c" not in df.columns:
-        df["vitamin_c_mg"] = _noisy(50, 30, 0.0)
-        df["label_vitamin_c"] = (df["vitamin_c_mg"] < 40).astype(int)
-    else:
-        vc_def = df["label_vitamin_c"].values
-        df["vitamin_c_mg"] = np.where(vc_def, _noisy(20, 15, 0.0), _noisy(80, 30, 10))
-
-    # Macro / other nutrients — correlated loosely with overall diet quality
-    df["calories_kcal"] = _noisy(1900, 400, 800)
-    df["protein_g"]     = _noisy(65, 20, 20)
-    df["carbs_g"]       = _noisy(220, 60, 50)
-    df["fat_g"]         = _noisy(75, 25, 10)
-    df["fiber_g"]       = _noisy(18, 7, 2)
-    df["vitamin_b6_mg"] = _noisy(1.4, 0.5, 0.1)
-    df["vitamin_a_mcg"] = _noisy(600, 250, 50)
-
-    # Rename NHANES columns to match expected feature names
-    rename_map = {}
-    if "RIDAGEYR" in df.columns:  rename_map["RIDAGEYR"] = "age"
-    if "RIAGENDR" in df.columns:  rename_map["RIAGENDR"] = "gender"
-    if "BMXBMI"  in df.columns:   rename_map["BMXBMI"]   = "bmi"
-    if "BMXWT"   in df.columns:   rename_map["BMXWT"]    = "weight_kg"
-    if "BMXHT"   in df.columns:   rename_map["BMXHT"]    = "height_cm"
-    # Legacy nhanes_master columns
-    if "weight_kg" not in df.columns and "weight" in df.columns:
-        rename_map["weight"] = "weight_kg"
-    if "height_cm" not in df.columns and "height" in df.columns:
-        rename_map["height"] = "height_cm"
-
-    if rename_map:
-        df = df.rename(columns=rename_map)
-
-    # gender: NHANES uses 1=Male, 2=Female → convert to 0=Male, 1=Female
-    if "gender" in df.columns:
-        df["gender"] = df["gender"].apply(lambda x: 0 if x in (1, "1", "Male", "male") else 1)
-
-    return df
-
-
-def build_models(scale_pos_weight: float):
-    """
-    Return dict of (name, model_type_key, model_object) for the two production models.
-    Only Random Forest and XGBoost are trained for the final deficiency risk system.
-    """
-    return {
-        "random_forest": (
-            "random_forest",
-            RandomForestClassifier(
-                n_estimators=200, max_depth=12, min_samples_leaf=5,
-                class_weight="balanced", n_jobs=-1, random_state=RANDOM_STATE
-            )
-        ),
-        "xgboost": (
-            "xgboost",
-            xgb.XGBClassifier(
-                n_estimators=300, max_depth=6, learning_rate=0.05,
-                subsample=0.8, colsample_bytree=0.8,
-                scale_pos_weight=scale_pos_weight,
-                eval_metric="logloss",
-                n_jobs=-1, random_state=RANDOM_STATE,
-                verbosity=0,
-            )
-        ),
-    }
-
-print(f"\nLoading nhanes_master.csv ...")
-master = pd.read_csv(os.path.join(PROC_DIR, "nhanes_master.csv"))
-# Compose features: demographics + nutrient totals if present
-feature_cols = [c for c in FEATURE_COLS + NUTRIENT_COLS if c in master.columns]
-label_cols   = [c for c in master.columns if c.startswith("label_")]
-
-# ── Main Training ──────────────────────────────────────────────────────────────
-print("=" * 65)
-print("  Food Log-Based Micronutrient Deficiency Detection System")
-print("  ML Training Pipeline — 2 Models (Random Forest + XGBoost) × 7 Deficiency Targets")
-print("=" * 65)
-
-# Load NHANES master CSV
-nhanes_path = os.path.join(PROC_DIR, "nhanes_master.csv")
-if not os.path.exists(nhanes_path):
-    print(f"\n⚠  nhanes_master.csv not found at {nhanes_path}")
-    print("   Generating synthetic training dataset instead...")
-    np.random.seed(RANDOM_STATE)
-    n_samples = 12000
-    master = pd.DataFrame({
-        "age":    np.random.randint(18, 80, n_samples).astype(float),
-        "gender": np.random.choice([0, 1], n_samples).astype(float),
-        "bmi":    np.random.normal(25.5, 5.0, n_samples).clip(14, 50),
-        "weight_kg": np.random.normal(70, 15, n_samples).clip(35, 150),
-        "height_cm": np.random.normal(168, 10, n_samples).clip(140, 200),
-    })
-    # Derive labels
-    master["label_iron"]        = (np.random.rand(n_samples) < 0.22).astype(int)
-    master["label_calcium"]     = (np.random.rand(n_samples) < 0.35).astype(int)
-    master["label_vitamin_d"]   = (np.random.rand(n_samples) < 0.41).astype(int)
-    master["label_vitamin_b12"] = (np.random.rand(n_samples) < 0.19).astype(int)
-    master["label_zinc"]        = (np.random.rand(n_samples) < 0.17).astype(int)
-    # magnesium + vitamin_c labels will be derived in add_nutrient_features
-else:
-    print(f"\nLoading nhanes_master.csv ...")
-    master = pd.read_csv(nhanes_path)
-
-print(f"  Raw shape: {master.shape}")
-
-# Augment with synthetic nutrient intake columns (food log features)
-print("\nAugmenting with nutrient intake features ...")
-master = add_nutrient_features(master)
-
-# Determine available feature columns and targets
-feature_cols = [c for c in FEATURE_COLS if c in master.columns]
-print(f"  Features ({len(feature_cols)}): {feature_cols}")
-
-# Save base feature names
-# Save final feature names
-with open(os.path.join(MODELS_DIR, "feature_names.json"), "w") as f:
-    json.dump(feature_cols, f, indent=2)
-print(f"  Saved feature_names.json")
-
-# Save model-specific feature lists for each nutrient
-feature_names_by_nutrient = {}
-
-all_metrics      = {}   # {nutrient: {xgboost: {...}, random_forest: {...}, winner: "..."}}
-comparison_rows  = []   # for CSV export
-all_metrics     = {}
-comparison_rows = []
-
-for nutrient, label_col in TARGETS.items():
-    if label_col not in master.columns:
-        print(f"\n⚠  {label_col} not found — skipping {nutrient}")
-        continue
-    # Avoid leakage: remove the nutrient column that corresponds to the target
-    nutrient_col_map = {
-        "iron": "iron_mg",
-        "calcium": "calcium_mg",
-        "vitamin_d": "vitamin_d_mcg",
-        "vitamin_b12": "vitamin_b12_mcg",
-        "zinc": "zinc_mg",
-    }
-    exclude_col = nutrient_col_map.get(nutrient)
-    local_features = [c for c in feature_cols if c != exclude_col]
-
-    df = master[local_features + [label_col]].dropna()
-    X_df = df[local_features].copy()
-    y = df[label_col].astype(int).values
-
-    # Keep the actual feature list for this nutrient so inference matches training
-    feature_names_by_nutrient[nutrient] = local_features
-
-    # Preprocessing: numeric scaler, categorical encoding
-    numeric_cols = [c for c in local_features if c not in ("race_ethnicity", "gender")]
-    cat_cols = [c for c in local_features if c in ("race_ethnicity", "gender")]
-
-    # Note: scikit-learn <1.2 uses `sparse` arg, newer versions use `sparse_output`.
-    try:
-        ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-    except TypeError:
-        ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
-
-    preproc = ColumnTransformer([
-        ("num", StandardScaler(), numeric_cols),
-        ("cat", ohe, cat_cols)
-    ], remainder="drop")
-
-    X_proc = preproc.fit_transform(X_df)
-    X = X_proc
-
-    transformed_feature_names = get_transform_output_feature_names(preproc)
-    feature_names_by_nutrient[nutrient] = transformed_feature_names
-    preproc_path = os.path.join(MODELS_DIR, f"{nutrient}_preprocessor.pkl")
-    with open(preproc_path, "wb") as f:
-        pickle.dump(preproc, f)
-    print(f"  Saved preprocessor -> {os.path.basename(preproc_path)}")
-    df = master[feature_cols + [label_col]].dropna()
-    if len(df) < 100:
-        print(f"\n⚠  Too few samples for {nutrient} ({len(df)}) — skipping")
-        continue
-
-    X = df[feature_cols].astype(float).values
-    y = df[label_col].astype(int).values
-
-    n_pos = int(y.sum())
-    n_neg = len(y) - n_pos
-    spw   = max(n_neg / n_pos, 1.0) if n_pos > 0 else 1.0
-
-    print(f"\n{'='*65}")
-    print(f"  TARGET: {nutrient.upper().replace('_', ' ')}  |  samples={len(y)}  pos={n_pos}  neg={n_neg}")
-    print(f"{'='*65}")
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
-    )
-
-    model_pool  = build_models(spw)
-    best_name   = None
-    best_type   = None
-    best_model  = None
-    best_auc    = -1.0
-    model_metrics: Dict[str, dict] = {}
-    trained_models: Dict[str, object] = {}
-
-    for m_key, (m_type, clf) in model_pool.items():
-        try:
-            clf.fit(X_train, y_train)
-            y_prob = clf.predict_proba(X_test)[:, 1]
-            y_pred = clf.predict(X_test)
-            m = evaluate(y_test, y_pred, y_prob)
-
-            # 5-fold CV AUC (on train set, using stratified split)
-            try:
-                cv_scores = cross_val_score(
-                    clf, X_train, y_train,
-                    cv=CV_FOLDS, scoring="roc_auc", n_jobs=-1
-                )
-                m["cv_auc"] = round(float(cv_scores.mean()), 4)
-                m["cv_std"] = round(float(cv_scores.std()), 4)
-            except Exception:
-                m["cv_auc"] = m["roc_auc"]
-                m["cv_std"] = 0.0
-
-            model_metrics[m_key] = m
-            trained_models[m_type] = clf
-            print(f"  {m_key:<22}  AUC={m['roc_auc']:.4f}  CV={m['cv_auc']:.4f}±{m['cv_std']:.4f}  F1={m['f1']:.4f}")
-
-            # Select best by CV AUC (tie-break by roc_auc)
-            score = m["cv_auc"]
-            if score > best_auc:
-                best_auc   = score
-                best_name  = m_key
-                best_type  = m_type
-                best_model = clf
-
-        except Exception as e:
-            print(f"  {m_key:<22}  ERROR: {e}")
-
-    if not trained_models:
-        print(f"  ✗ All models failed for {nutrient}")
-        continue
-
-    # Save both Random Forest and XGBoost for ensemble inference
-    for model_type, model_obj in trained_models.items():
-        saved = save_model(nutrient, model_obj, model_type)
-        print(f"  ✓ Saved {model_type} model → {os.path.basename(saved)}")
-
-    ensemble_type = "ensemble" if len(trained_models) > 1 else best_type
-    write_model_type(nutrient, ensemble_type)
-    print(f"\n  ✓ Best model: {best_name.upper()}  →  ensemble stored as {ensemble_type}")
-
-    # Classification report for the winner
-    best_pred = best_model.predict(X_test)
-    print(classification_report(y_test, best_pred, zero_division=0))
-
-    all_metrics[nutrient] = {
-        "winner":       best_name,
-        "winner_type":  best_type,
-        "models":       model_metrics,
-    }
-
-    for mk, mm in model_metrics.items():
-        comparison_rows.append({
-            "nutrient":    nutrient,
-            "model":       mk,
-            "accuracy":    mm["accuracy"],
-            "precision":   mm["precision"],
-            "recall":      mm["recall"],
-            "f1":          mm["f1"],
-            "roc_auc":     mm["roc_auc"],
-            "cv_auc":      mm.get("cv_auc", 0),
-            "cv_std":      mm.get("cv_std", 0),
-            "winner":      "YES" if mk == best_name else "",
-        })
-
-# ── Save model-specific feature names ───────────────────────────────────────
-feature_map_path = os.path.join(MODELS_DIR, "feature_names_by_nutrient.json")
-with open(feature_map_path, "w") as f:
-    json.dump(feature_names_by_nutrient, f, indent=2)
-print(f"Model-specific feature names saved -> {feature_map_path}")
-
-# ── Save metrics JSON ──────────────────────────────────────────────────────────
-# ── Save metrics ───────────────────────────────────────────────────────────────
-metrics_path = os.path.join(MODELS_DIR, "metrics.json")
-with open(metrics_path, "w") as f:
-    json.dump(all_metrics, f, indent=2)
-print(f"\nMetrics → {metrics_path}")
-
-csv_path = os.path.join(MODELS_DIR, "comparison_table.csv")
-pd.DataFrame(comparison_rows).to_csv(csv_path, index=False)
-print(f"Comparison table → {csv_path}")
-
-# ── Final Summary ──────────────────────────────────────────────────────────────
-print("\n" + "=" * 65)
-print("  FINAL SUMMARY — Best Models Selected")
-print("=" * 65)
-fmt = "  {:<14} {:<22} {:>8} {:>8} {:>8}"
-print(fmt.format("Nutrient", "Best Model", "CV-AUC", "AUC", "F1"))
-print("  " + "-" * 60)
-for nut, data in all_metrics.items():
-    w  = data["winner"]
-    mm = data["models"].get(w, {})
-    print(fmt.format(
-        nut, w,
-        f"{mm.get('cv_auc', 0):.4f}",
-        f"{mm.get('roc_auc', 0):.4f}",
-        f"{mm.get('f1', 0):.4f}"
-    ))
-print("=" * 65)
-print("\n✓ Training complete. Models saved to ml/models/")
-print("  Start the API: uvicorn app.main:app --reload")
+def train_backend_models():
+    logging.info("Starting Backend Model Training on Real Engineered NHANES Dataset...")
+    
+    # Locate processed data files
+    train_path = os.path.join(os.path.dirname(BASE_DIR), "processed_data", "train_engineered.csv")
+    val_path   = os.path.join(os.path.dirname(BASE_DIR), "processed_data", "val_engineered.csv")
+    
+    if not os.path.exists(train_path) or not os.path.exists(val_path):
+        train_path = "processed_data/train_engineered.csv"
+        val_path   = "processed_data/val_engineered.csv"
+        
+    if not os.path.exists(train_path) or not os.path.exists(val_path):
+        logging.error(f"Cannot find engineered datasets at {train_path} and {val_path}. Run Modules 01-04 first.")
+        return
+
+    train_df = pd.read_csv(train_path)
+    val_df   = pd.read_csv(val_path)
+    
+    features = [c for c in train_df.columns if not c.startswith('target_') and c != 'SEQN']
+    X_train_raw = train_df[features].select_dtypes(include=[np.number])
+    X_val_raw   = val_df[features].select_dtypes(include=[np.number])
+    
+    valid_cols = X_train_raw.columns[X_train_raw.notna().any()].tolist()
+    X_train = X_train_raw[valid_cols]
+    X_val   = X_val_raw[valid_cols]
+    
+    # Save feature names for inference
+    with open(os.path.join(MODELS_DIR, "feature_names.json"), "w") as f:
+        json.dump(valid_cols, f, indent=2)
+        
+    comparison_rows = []
+    best_summary = {}
+
+    for nut, target_col in TARGET_MAP.items():
+        if target_col not in train_df.columns:
+            continue
+            
+        y_train = train_df[target_col].values
+        y_val   = val_df[target_col].values
+        
+        n_pos = int(y_train.sum())
+        n_neg = len(y_train) - n_pos
+        scale_pos_weight = max(1.0, n_neg / max(1, n_pos))
+        
+        logging.info(f"\n=================================================================")
+        logging.info(f" TRAINING MODELS FOR {nut.upper()} (Prevalence: {n_pos/len(y_train):.2%})")
+        logging.info(f"=================================================================")
+        
+        # 1. Random Forest Classifier
+        rf_pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
+            ('classifier', RandomForestClassifier(
+                n_estimators=150, max_depth=8, min_samples_leaf=3,
+                class_weight='balanced', random_state=RANDOM_STATE, n_jobs=-1
+            ))
+        ])
+        
+        # 2. XGBoost Classifier
+        xgb_pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
+            ('classifier', xgb.XGBClassifier(
+                n_estimators=150, max_depth=5, learning_rate=0.05,
+                subsample=0.8, colsample_bytree=0.8, scale_pos_weight=scale_pos_weight,
+                eval_metric='logloss', random_state=RANDOM_STATE, n_jobs=-1
+            ))
+        ])
+        
+        candidates = {
+            "random_forest": rf_pipeline,
+            "xgboost": xgb_pipeline
+        }
+        
+        best_auc = -1.0
+        best_model_name = None
+        best_pipeline = None
+        
+        for m_name, pipeline in candidates.items():
+            pipeline.fit(X_train, y_train)
+            
+            train_pred = pipeline.predict(X_train)
+            val_pred   = pipeline.predict(X_val)
+            val_prob   = pipeline.predict_proba(X_val)[:, 1]
+            
+            train_acc = accuracy_score(y_train, train_pred)
+            val_acc   = accuracy_score(y_val, val_pred)
+            acc_gap   = train_acc - val_acc
+            
+            prec  = precision_score(y_val, val_pred, zero_division=0)
+            rec   = recall_score(y_val, val_pred, zero_division=0)
+            f1    = f1_score(y_val, val_pred, zero_division=0)
+            auc   = roc_auc_score(y_val, val_prob)
+            
+            tn, fp, fn, tp = confusion_matrix(y_val, val_pred, labels=[0, 1]).ravel()
+            
+            fit_status = "Well-Fitted"
+            if train_acc > 0.88 and acc_gap > 0.10:
+                fit_status = "Overfitting Detected"
+            elif train_acc < 0.60 and val_acc < 0.60:
+                fit_status = "Underfitting Detected"
+                
+            logging.info(f"[{m_name.upper():15s} - {nut.upper()}]")
+            logging.info(f"   -> Training Accuracy  : {train_acc:.4f} ({train_acc*100:.2f}%)")
+            logging.info(f"   -> Testing Accuracy   : {val_acc:.4f} ({val_acc*100:.2f}%)")
+            logging.info(f"   -> Accuracy Gap       : {acc_gap:+.4f} ({fit_status})")
+            logging.info(f"   -> Precision: {prec:.4f} | Recall: {rec:.4f} | F1: {f1:.4f} | ROC-AUC: {auc:.4f}")
+            logging.info(f"   -> Confusion Matrix   : TN={tn}, FP={fp}, FN={fn}, TP={tp}")
+            
+            comparison_rows.append({
+                "nutrient": nut,
+                "model": m_name,
+                "train_accuracy": round(train_acc, 4),
+                "test_accuracy": round(val_acc, 4),
+                "accuracy_gap": round(acc_gap, 4),
+                "fit_status": fit_status,
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1_score": round(f1, 4),
+                "roc_auc": round(auc, 4),
+                "confusion_matrix": f"TN={tn}, FP={fp}, FN={fn}, TP={tp}"
+            })
+            
+            # Save individual candidate model
+            model_file = os.path.join(MODELS_DIR, f"{nut}_{m_name}.pkl")
+            joblib.dump(pipeline, model_file)
+            
+            if auc > best_auc:
+                best_auc = auc
+                best_model_name = m_name
+                best_pipeline = pipeline
+
+        # Save winner model for nutrient
+        winner_path = os.path.join(MODELS_DIR, f"{nut}_model.pkl")
+        joblib.dump(best_pipeline, winner_path)
+        
+        # Also copy to root models/ directory for root scripts
+        root_models_dir = os.path.join(os.path.dirname(BASE_DIR), "models")
+        os.makedirs(root_models_dir, exist_ok=True)
+        joblib.dump(best_pipeline, os.path.join(root_models_dir, f"best_model_{nut}.pkl"))
+        
+        with open(os.path.join(MODELS_DIR, f"{nut}_model_type.txt"), "w") as f:
+            f.write(best_model_name)
+            
+        logging.info(f"---> SELECTED BEST MODEL FOR {nut.upper()}: {best_model_name} (ROC-AUC = {best_auc:.4f})")
+        best_summary[nut] = {"best_model": best_model_name, "roc_auc": round(best_auc, 4)}
+
+    # Save metrics and comparison table CSV
+    comp_df = pd.DataFrame(comparison_rows)
+    comp_df.to_csv(os.path.join(MODELS_DIR, "comparison_table.csv"), index=False)
+    
+    reports_dir = os.path.join(os.path.dirname(BASE_DIR), "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    comp_df.to_csv(os.path.join(reports_dir, "model_comparison.csv"), index=False)
+    
+    with open(os.path.join(MODELS_DIR, "metrics.json"), "w") as f:
+        json.dump(best_summary, f, indent=2)
+        
+    logging.info("\nBackend Model Training Completed Successfully. All models saved.")
+
+if __name__ == "__main__":
+    train_backend_models()

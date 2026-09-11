@@ -1,7 +1,9 @@
-# Python
+# Python & Cache
 __pycache__/
 *.py[cod]
 *.pyd
+.pytest_cache/
+catboost_info/
 
 # Virtual Environment
 venv/
@@ -11,21 +13,27 @@ backend/venv/
 # Node
 frontend/node_modules/
 node_modules/
+frontend/dist/
+frontend/dist-ssr/
 
-# Datasets
+# Large Datasets (Exceeds GitHub 100MB limits)
+dataset/
 backend/data/
 
-# ML Models
+# ML Models Cache
 backend/ml/models/
 
-# Database
+# Database Files
 *.db
 backend/nutrition.db
 backend/test.db
 
-# Environment
-.env
-*.env
+# Environment Files (.env tracked per user request)
+!*.env*
+!.env
+!.env.*
 
 # Logs
 *.log
+logs/
+scratch/

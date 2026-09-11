@@ -1,0 +1,12 @@
+# Python & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.venv/
+
+# Environment Files (Tracked per explicit user request)
+!*.env*
+!.env
+!.env.*

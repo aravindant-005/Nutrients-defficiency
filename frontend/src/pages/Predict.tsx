@@ -402,11 +402,11 @@ const Predict: React.FC = () => {
             {results.recommendations && (
               <div className="glass-panel p-6 rounded-xl space-y-6">
                 <h3 className="font-bold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-900 pb-3">
-                  <Apple className="h-5 w-5 text-emerald-450" /> Personalized Recommendations
+                  <Apple className="h-5 w-5 text-emerald-400" /> Personalized Recommendations
                 </h3>
 
                 {/* Health Advice Callout */}
-                <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-350 text-xs leading-relaxed flex items-start gap-2.5">
+                <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs leading-relaxed flex items-start gap-2.5">
                   <Info className="h-4.5 w-4.5 mt-0.5 shrink-0 text-emerald-400" />
                   <div>
                     <span className="font-bold block mb-0.5">Clinical Wellness Advice</span>
@@ -421,8 +421,8 @@ const Predict: React.FC = () => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {results.recommendations.foods_to_eat.map((food: RecommendationFoodItem, idx: number) => (
-                      <div key={idx} className="p-3.5 rounded-lg bg-slate-900 border border-slate-850 flex flex-col justify-between">
-                        <span className="text-xs font-bold text-slate-300 truncate mb-1">{food.food_name}</span>
+                      <div key={idx} className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-xs font-bold text-slate-200 truncate mb-1">{food.food_name}</span>
                         <span className="text-base font-extrabold text-emerald-400 mt-1">
                           {food.nutrient_amount.toFixed(1)} <span className="text-[10px] font-normal text-slate-500">{food.unit}</span>
                         </span>
@@ -435,12 +435,12 @@ const Predict: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Foods to Avoid list */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                       <XCircle className="h-4 w-4 text-rose-500" /> Foods / Habits to Avoid
                     </h4>
                     <ul className="space-y-2.5">
                       {results.recommendations.foods_to_avoid.map((item: string, idx: number) => (
-                        <li key={idx} className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/20 text-[11px] text-rose-350 leading-normal">
+                        <li key={idx} className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/20 text-[11px] text-rose-300 leading-normal">
                           {item}
                         </li>
                       ))}
@@ -449,18 +449,18 @@ const Predict: React.FC = () => {
 
                   {/* Recommended Daily Targets (RDA) */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                       <Target className="h-4 w-4 text-indigo-400" /> Recommended Daily Targets (RDA)
                     </h4>
-                    <div className="rounded-lg border border-slate-850 overflow-hidden text-xs">
+                    <div className="rounded-lg border border-slate-800 overflow-hidden text-xs">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-900 text-slate-500 uppercase tracking-wider text-[9px] border-b border-slate-850">
+                          <tr className="bg-slate-900 text-slate-400 uppercase tracking-wider text-[9px] border-b border-slate-800">
                             <th className="py-2.5 px-4 font-semibold">Nutrient</th>
                             <th className="py-2.5 px-4 font-semibold text-right">RDA Target</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850 text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-slate-300">
                           {results.recommendations.daily_nutrient_targets.map((tgt: NutrientTarget, idx: number) => (
                             <tr key={idx} className="hover:bg-white/[0.01]">
                               <td className="py-2.5 px-4 font-medium">{tgt.nutrient}</td>
@@ -501,7 +501,7 @@ const Predict: React.FC = () => {
                     return (
                       <div key={item.feature} className="grid grid-cols-12 items-center gap-3">
                         <div className="col-span-4">
-                          <p className="text-xs font-semibold text-slate-350 truncate">{label}</p>
+                          <p className="text-xs font-semibold text-slate-200 truncate">{label}</p>
                           <p className="text-[10px] text-slate-600 mt-0.5">Value: {item.value.toFixed(1)}</p>
                         </div>
 

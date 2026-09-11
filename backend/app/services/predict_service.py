@@ -230,9 +230,6 @@ class PredictionService:
             vitamin_d_risk=results["vitamin_d"].risk_score,
             vitamin_b12_risk=results["vitamin_b12"].risk_score,
             zinc_risk=results["zinc"].risk_score,
-            magnesium_risk=0.0,
-            vitamin_c_risk=0.0,
-
             magnesium_risk=results["magnesium"].risk_score,
             vitamin_c_risk=results["vitamin_c"].risk_score,
             prediction_date=now,

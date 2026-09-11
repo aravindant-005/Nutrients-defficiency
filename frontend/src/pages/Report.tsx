@@ -184,7 +184,7 @@ const DashboardReport: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-slate-500 block">Full Name</span>
-                <span className="font-bold text-slate-350">{profile?.name}</span>
+                <span className="font-bold text-slate-200">{profile?.name}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Email Address</span>
@@ -192,11 +192,11 @@ const DashboardReport: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-500 block">Age / Gender</span>
-                <span className="text-slate-350 font-bold">{age} yrs · {profile?.gender}</span>
+                <span className="text-slate-200 font-bold">{age} yrs · {profile?.gender}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Activity Level</span>
-                <span className="text-slate-350 font-semibold">{profile?.activity_level ?? 'Moderate'}</span>
+                <span className="text-slate-200 font-semibold">{profile?.activity_level ?? 'Moderate'}</span>
               </div>
             </div>
           </div>
@@ -209,15 +209,15 @@ const DashboardReport: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-slate-500 block">Height / Weight</span>
-                <span className="text-slate-350 font-semibold">{profile?.height} cm / {profile?.weight} kg</span>
+                <span className="text-slate-200 font-semibold">{profile?.height} cm / {profile?.weight} kg</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Calculated BMI</span>
-                <span className="text-slate-350 font-extrabold">{profile?.bmi?.toFixed(1)} kg/m²</span>
+                <span className="text-slate-200 font-extrabold">{profile?.bmi?.toFixed(1)} kg/m²</span>
               </div>
               <div className="col-span-2">
                 <span className="text-slate-500 block">Weight Classification</span>
-                <span className="text-slate-350 font-bold text-emerald-400">
+                <span className="text-slate-200 font-bold text-emerald-400">
                   {profile?.bmi ? getBmiCategory(profile.bmi) : 'Normal weight'}
                 </span>
               </div>
@@ -234,7 +234,7 @@ const DashboardReport: React.FC = () => {
             <div className="rounded-lg border border-slate-900 overflow-hidden text-xs print:border-slate-300">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-slate-500 uppercase tracking-wider text-[9px] border-b border-slate-900 print:bg-slate-100 print:text-slate-700 print:border-slate-300">
+                  <tr className="bg-slate-900 text-slate-400 uppercase tracking-wider text-[9px] border-b border-slate-900 print:bg-slate-100 print:text-slate-700 print:border-slate-300">
                     <th className="py-2.5 px-4 font-semibold">Nutrient deficiency Target</th>
                     <th className="py-2.5 px-4 font-semibold text-center">Calculated Probability</th>
                     <th className="py-2.5 px-4 font-semibold text-right">Risk Assessment Level</th>
@@ -246,8 +246,8 @@ const DashboardReport: React.FC = () => {
                     const rClass = score >= 0.70 ? 'text-rose-400 font-bold' : score >= 0.45 ? 'text-amber-400 font-bold' : 'text-emerald-400';
                     return (
                       <tr key={key} className="hover:bg-white/[0.01]">
-                        <td className="py-2.5 px-4 font-medium">{label}</td>
-                        <td className="py-2.5 px-4 text-center font-mono font-semibold">{(score * 100).toFixed(1)}%</td>
+                        <td className="py-2.5 px-4 font-medium text-slate-200">{label}</td>
+                        <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-200">{(score * 100).toFixed(1)}%</td>
                         <td className={`py-2.5 px-4 text-right ${rClass}`}>{score >= 0.70 ? 'HIGH RISK' : score >= 0.45 ? 'MODERATE RISK' : 'LOW RISK'}</td>
                       </tr>
                     );
@@ -269,7 +269,7 @@ const DashboardReport: React.FC = () => {
             <div className="rounded-lg border border-slate-900 overflow-hidden text-xs print:border-slate-300">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-slate-500 uppercase tracking-wider text-[9px] border-b border-slate-900 print:bg-slate-100 print:text-slate-700 print:border-slate-300">
+                  <tr className="bg-slate-900 text-slate-400 uppercase tracking-wider text-[9px] border-b border-slate-900 print:bg-slate-100 print:text-slate-700 print:border-slate-300">
                     <th className="py-2.5 px-4 font-semibold">Nutrient Parameter</th>
                     <th className="py-2.5 px-4 font-semibold text-center">Today's Total Intake</th>
                     <th className="py-2.5 px-4 font-semibold text-center">Daily RDA Target</th>
@@ -291,10 +291,10 @@ const DashboardReport: React.FC = () => {
                     const pct = nut.tgt > 0 ? (nut.val / nut.tgt) * 100 : 0;
                     return (
                       <tr key={nut.name} className="hover:bg-white/[0.01]">
-                        <td className="py-2.5 px-4 font-medium">{nut.name}</td>
-                        <td className="py-2.5 px-4 text-center font-bold">{nut.val.toFixed(1)} {nut.unit}</td>
+                        <td className="py-2.5 px-4 font-medium text-slate-200">{nut.name}</td>
+                        <td className="py-2.5 px-4 text-center font-bold text-slate-100">{nut.val.toFixed(1)} {nut.unit}</td>
                         <td className="py-2.5 px-4 text-center text-slate-400">{nut.tgt} {nut.unit}</td>
-                        <td className={`py-2.5 px-4 text-right font-semibold ${pct >= 100 ? 'text-emerald-450' : pct >= 50 ? 'text-amber-450' : 'text-rose-455'}`}>
+                        <td className={`py-2.5 px-4 text-right font-semibold ${pct >= 100 ? 'text-emerald-400' : pct >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
                           {pct.toFixed(0)}% RDA met
                         </td>
                       </tr>
@@ -312,16 +312,16 @@ const DashboardReport: React.FC = () => {
         {latest && recFoods.length > 0 && (
           <div className="space-y-3.5">
             <h3 className="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-900/60 print:border-slate-200 pb-2">
-              <FileText className="h-4 w-4 text-emerald-450 shrink-0" /> Target Recommendations & Nutritional Advice
+              <FileText className="h-4 w-4 text-emerald-400 shrink-0" /> Target Recommendations & Nutritional Advice
             </h3>
             <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-900 print:bg-slate-50 print:border-slate-200 text-xs space-y-3.5">
               <div>
                 <span className="font-semibold text-slate-400 block mb-1">Recommended Nutrient-Dense Foods:</span>
-                <p className="text-slate-250 font-semibold">{recFoods.join(" · ")}</p>
+                <p className="text-slate-200 font-semibold">{recFoods.join(" · ")}</p>
               </div>
               <div>
                 <span className="font-semibold text-slate-400 block mb-1">Key Absorption Inhibitors / Habits to Limit:</span>
-                <p className="text-slate-350 leading-relaxed font-medium">
+                <p className="text-slate-300 leading-relaxed font-medium">
                   Do not consume caffeine with iron meals. Limit sodium and carbonated sodas to retain calcium. Restrict phytates from whole grains if prone to zinc deficiency.
                 </p>
               </div>
@@ -333,7 +333,7 @@ const DashboardReport: React.FC = () => {
         <div className="pt-12 flex justify-between items-end border-t border-slate-900/40 print:border-slate-200 text-xs">
           <div>
             <p className="text-slate-500">Report Status</p>
-            <p className="font-bold text-emerald-450">AUTHENTICATED (DIGITALLY SIGNED)</p>
+            <p className="font-bold text-emerald-400">AUTHENTICATED (DIGITALLY SIGNED)</p>
           </div>
           <div className="text-right space-y-1">
             <p className="text-slate-500">Authorized Clinician Signature</p>

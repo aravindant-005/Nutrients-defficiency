@@ -172,19 +172,19 @@ const Dashboard: React.FC = () => {
             <User className="h-4 w-4 text-emerald-400" /> Physiological Profile
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-lg">
+            <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Age</span>
               <span className="text-sm font-semibold text-slate-300">{profile?.age ?? '—'} yrs</span>
             </div>
-            <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-lg">
+            <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Gender</span>
               <span className="text-sm font-semibold text-slate-300">{profile?.gender ?? '—'}</span>
             </div>
-            <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-lg">
+            <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Height</span>
               <span className="text-sm font-semibold text-slate-300">{profile?.height ?? '—'} cm</span>
             </div>
-            <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-lg">
+            <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Weight</span>
               <span className="text-sm font-semibold text-slate-300">{profile?.weight ?? '—'} kg</span>
             </div>
@@ -272,7 +272,7 @@ const Dashboard: React.FC = () => {
               foodLogs.slice(0, 4).map((log) => (
                 <div key={log.id} className="p-4 flex justify-between items-center text-xs">
                   <div>
-                    <p className="font-bold text-slate-350">{log.food_name}</p>
+                    <p className="font-bold text-slate-200">{log.food_name}</p>
                     <p className="text-[10px] text-slate-500 mt-0.5">
                       {log.quantity}{log.serving_size} · {log.meal_type}
                     </p>
@@ -304,7 +304,7 @@ const Dashboard: React.FC = () => {
             {!latest ? (
               <div className="text-center py-8 text-slate-500">
                 <p className="text-xs">No deficiency predictions found.</p>
-                <Link to="/predict" className="text-xs text-emerald-450 hover:underline mt-2 block">
+                <Link to="/predict" className="text-xs text-emerald-400 hover:underline mt-2 block">
                   Calculate deficiency risk profile →
                 </Link>
               </div>
